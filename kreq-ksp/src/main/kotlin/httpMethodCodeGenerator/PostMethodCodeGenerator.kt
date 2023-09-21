@@ -6,24 +6,27 @@ import com.google.devtools.ksp.symbol.KSValueParameter
 import com.squareup.kotlinpoet.FunSpec
 import context.HttpMethodBuildContext
 import context.SymbolProcessorContext
+import url.DefaultUrlResolver
 import utils.hasPostBodyAnnotation
 import utils.typeIsRequestBody
 
-open class PostMethodCodeGenerator(private val methodCtx: HttpMethodBuildContext) : HttpMethodCodeGenerator {
+open class PostMethodCodeGenerator(
+    private val httpCtx: HttpMethodBuildContext,
+    private val urlResolver: DefaultUrlResolver = DefaultUrlResolver()
+) : HttpMethodCodeGenerator {
     context (SymbolProcessorContext, context.ApiBuildContext, FunSpec.Builder)
-    override fun resolve() = methodCtx {
+    override fun resolve() = httpCtx {
         postMethod()
-        resolveUrl(methodCtx)
+        urlResolver.resolve(httpCtx)
     }
 
     override fun supportMethod() = HttpMethods.POST
-
     context (SymbolProcessorContext, HttpMethodBuildContext)
     private fun FunSpec.Builder.postMethod() = addStatement(".post(%L)", resolvePostBodyVarName())
 
     context (SymbolProcessorContext, HttpMethodBuildContext)
     private fun resolvePostBodyVarName(): String {
-        val matchedParameters = methodCtx.parameters
+        val matchedParameters = httpCtx.parameters
             .filter { it.hasPostBodyAnnotation() && it.typeIsRequestBody(resolver) }
         return when (matchedParameters.size) {
             1 -> matchedParameters[0].name?.getShortName()!!

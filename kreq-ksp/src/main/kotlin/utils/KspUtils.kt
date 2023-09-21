@@ -7,10 +7,8 @@ import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.*
 
 val List<KSValueArgument>.uri get() = first { it.name?.asString() == "uri" }.value as String
-
-
 fun KSValueParameter.hasPostBodyAnnotation() =
-    annotations.filter { anno -> anno.isSameWith<PostBody>() }.toList().isNotEmpty()
+    annotations.filter { anno -> anno.isSameType<PostBody>() }.toList().isNotEmpty()
 
 val Resolver.requestBodyDecl: KSType
     get() = this.getClassDeclarationByNameOrException("okhttp3.RequestBody").asStarProjectedType()

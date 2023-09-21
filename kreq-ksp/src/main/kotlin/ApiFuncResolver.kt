@@ -6,7 +6,6 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import context.ApiBuildContext
 import context.HttpMethodBuildContext
 import context.SymbolProcessorContext
-import httpMethodCodeGenerator.finishRequestBuild
 import httpMethodCodeGenerator.httpMethod
 import utils.*
 
@@ -60,7 +59,7 @@ class ApiFuncResolver(
     @Suppress(Constants.UNCHECKED_CAST)
     private fun assertAnnotatedWithHttpMethodImpl() {
         val annotations = decl.annotations
-            .flatMap { anno -> anno.annotations.filterAnnotationType<HttpMethod>() }.toList()
+            .flatMap { anno -> anno.annotations.filterType<HttpMethod>() }.toList()
             .ifEmpty { logger.exception(ApiMemberFunctionMustAnnotatedWithHttpMethod(api, decl)) } as List<KSAnnotation>
 
         if (annotations.size > 1) {

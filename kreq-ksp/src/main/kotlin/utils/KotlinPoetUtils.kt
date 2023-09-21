@@ -95,7 +95,9 @@ fun FunSpec.Builder.addCreateNewInstanceStatement(instanceVarName: String, class
     addStatement("val $instanceVarName = %T()", className)
 
 fun FunSpec.Companion.builder(name: String, configuration: FunSpec.Builder.() -> Unit): FunSpec.Builder =
-    FunSpec.builder(name).apply(configuration)
+    builder(name).apply(configuration)
 
 fun TypeSpec.Companion.classBuilder(name: String, configuration: TypeBuilder.() -> Unit) =
     classBuilder(name).apply(configuration)
+
+fun FunSpec.Builder.finishRequestBuild() = addStatement(".build()")
