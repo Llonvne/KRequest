@@ -39,16 +39,15 @@ open class KRequestProcessor(private val env: SymbolProcessorEnvironment) : Symb
 
     context(SymbolProcessorContext)
     @Suppress(Constants.UNCHECKED_CAST)
-    private fun Sequence<KSAnnotated>.filterInterface(): Sequence<KSClassDeclaration> {
-        return filter { annotated ->
-            if (annotated is KSClassDeclaration && annotated.isInterface) {
-                true
-            } else {
-                processUnValidApiAnnotatedValue(annotated)
-                false
-            }
-        } as Sequence<KSClassDeclaration>
-    }
+    private fun Sequence<KSAnnotated>.filterInterface() = filter { annotated ->
+        if (annotated is KSClassDeclaration && annotated.isInterface) {
+            true
+        } else {
+            processUnValidApiAnnotatedValue(annotated)
+            false
+        }
+    } as Sequence<KSClassDeclaration>
+
 
     /**
      * 重写该方法允许你重写当遇到非标准元素的行为
