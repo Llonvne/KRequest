@@ -103,7 +103,7 @@ fun TypeBuilder.setApiSuperInterface(api: KSClassDeclaration) = run {
 /**
  * 设置类型为 [KModifier.PRIVATE]
  */
-fun TypeBuilder.setPrivateType() = apply { modifiers.add(KModifier.PRIVATE) }
+fun TypeBuilder.setPrivateModifier() = apply { modifiers.add(KModifier.PRIVATE) }
 
 /**
  * 设置为重载类型函数 [KModifier.OVERRIDE]
@@ -190,4 +190,8 @@ fun FunSpec.Companion.builder(name: String, configuration: FunSpec.Builder.() ->
 fun TypeSpec.Companion.classBuilder(name: String, configuration: TypeBuilder.() -> Unit) =
     classBuilder(name).apply(configuration)
 
+fun TypeBuilder.buildPrimaryConstruct(configuration: FunSpec.Builder.() -> Unit) =
+    primaryConstructor(FunSpec.constructorBuilder().apply(configuration).build())
 
+inline fun <reified T : Annotation> TypeBuilder.addAnnotation(configuration: AnnotationSpec.Builder.() -> Unit) =
+    addAnnotation(AnnotationSpec.builder(T::class).apply(configuration).build())

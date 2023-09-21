@@ -7,7 +7,7 @@ import context.SymbolProcessorContext
 import utils.getSymbolsWithAnnotation
 import utils.isInterface
 
-open class LlonvneSymbolProcessor(private val env: SymbolProcessorEnvironment) : SymbolProcessor {
+open class KRequestProcessor(private val env: SymbolProcessorEnvironment) : SymbolProcessor {
     private val poetResolver = KotlinPoetResolver(env)
 
     /**
