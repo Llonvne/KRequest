@@ -55,3 +55,11 @@ class PostBodyMoreThanOneException(size: Int, decl: KSFunctionDeclaration) : Api
 class KSClassDeclarationNotFound(name: String) : ApisInternalException(
     "class $name not found when in ksp!"
 )
+
+class ReturnTypeIsNull(val func: KSFunctionDeclaration) : ApisInternalException(
+    "function $func returnType is null".withLocation(func)
+)
+
+class NotResponseTypeShouldBeNullable(decl: KSFunctionDeclaration) : ApiException(
+    "api should nullable type if return type is not OkHttp Response".withLocation(decl)
+)

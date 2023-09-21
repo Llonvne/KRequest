@@ -10,6 +10,7 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/kreq-annos" />
             <option value="$PROJECT_DIR$/kreq-ksp" />
+            <option value="$PROJECT_DIR$/kreq-lib" />
             <option value="$PROJECT_DIR$/kreq-target" />
           </set>
         </option>

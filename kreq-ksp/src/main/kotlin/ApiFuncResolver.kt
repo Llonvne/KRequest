@@ -13,6 +13,8 @@ context (SymbolProcessorContext, ApiBuildContext)
 open class ApiFuncResolver(
     private val api: KSClassDeclaration, private val decl: KSFunctionDeclaration
 ) {
+    private val userDefinedResponseTypeResolver = UserDefinedResponseTypeResolver()
+
     fun resolve() {
         assertAnnotatedWithHttpMethodImpl()
         val httpMethodCtx = buildHttpCtx()
@@ -28,7 +30,14 @@ open class ApiFuncResolver(
      * 该函数控制 ApiFunc 修饰符等信息，重写该函数以改变此默认行为
      */
     protected open fun FunSpec.Builder.func() {
-        returnSameAs(decl)
+        if (returnResponse) {
+            returnSame(decl)
+        } else {
+            if (!decl.returnType?.resolve()?.isMarkedNullable!!) {
+                throw NotResponseTypeShouldBeNullable(decl)
+            }
+            returnSame(decl, true)
+        }
         setOverride()
         importParameters(decl)
     }
@@ -51,10 +60,15 @@ open class ApiFuncResolver(
     }
 
     private fun FunSpec.Builder.buildResponse() = apply {
-        if (decl.isReturnTypeQualifiedNameEquals(okHttpResponseFqName)) {
+        if (returnResponse) {
             buildReturnStatement(respVar)
+        } else {
+//            val retType = decl.returnType ?: throw ReturnTypeIsNull(decl)
+            buildReturnStatement("converter($respVar)")
         }
     }
+
+    private val returnResponse get() = decl.isReturnTypeQualifiedNameEquals(okHttpResponseFqName)
 
     private val respVar = "resp"
     private val requestVar = "request"

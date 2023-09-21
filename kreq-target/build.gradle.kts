@@ -12,6 +12,7 @@ repositories {
 
 dependencies {
     implementation(projects.kreqAnnos)
+    implementation(projects.kreqLib)
     ksp(projects.kreqKsp)
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
     testImplementation(platform("org.junit:junit-bom:5.9.1"))

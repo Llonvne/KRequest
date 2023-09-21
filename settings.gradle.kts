@@ -15,3 +15,4 @@ rootProject.name = "KRequest"
 include("kreq-annos")
 include("kreq-ksp")
 include("kreq-target")
+include("kreq-lib")

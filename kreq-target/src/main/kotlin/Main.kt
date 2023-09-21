@@ -1,10 +1,9 @@
 import okhttp3.OkHttpClient
-import okhttp3.RequestBody
-import okhttp3.Response
 
 fun main() {
     println(
         create<GitHubApi>("https://api.github.com", OkHttpClient())
+            .getUser("llonvne")
     )
 }
 
@@ -15,12 +14,17 @@ inline fun <reified Type> create(baseUrl: String, okHttpClient: OkHttpClient): T
 @Api
 interface GitHubApi {
     @GET("/users/{login}")
-    fun getUserAsync(@Path("login") login: String): Response
+    fun getUserAsync(@Path("login") login: String): GitUser?
 
-    @POST("/users/{login}")
-    fun getUser(@Path("login") login: String, @PostBody body: RequestBody): Response
+    @GET("/users/{login}")
+    fun getUser(@Path("login") login: String): GitUser?
 }
 
+data class GitUser(
+    val id: Int,
+    val login: String,
+    val url: String
+)
 
 
 

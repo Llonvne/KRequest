@@ -120,7 +120,13 @@ fun FunBuilder.setOverride() = apply { modifiers.add(KModifier.OVERRIDE) }
 /**
  * 设置接收器函数的返回值与参数返回值相同，注意该函数不处理泛型
  */
-fun FunBuilder.returnSameAs(func: KSFunctionDeclaration) = returns(func.returnType?.toTypeName()!!)
+fun FunBuilder.returnSame(func: KSFunctionDeclaration, nullable: Boolean? = null) {
+    if (nullable == null) {
+        returns(func.returnType?.toTypeName()!!)
+    } else {
+        returns(func.returnType?.toTypeName()?.copy(nullable)!!)
+    }
+}
 
 /**
  * 设置接收器函数参数列表与参数函数相同，注意该函数不处理泛型
