@@ -8,8 +8,8 @@ private fun String.withLocation(node: KSNode): String {
     return this + "at ${node.location.format()}"
 }
 
-class NotAValidApiForReturnValue(value: KSClassDeclaration) : ApisInternalException(
-    "$value is not a valid API annotated target for return!".withLocation(value)
+class NotAValidApiDecl(value: KSClassDeclaration) : ApisInternalException(
+    "$value is not a valid API annotated target!".withLocation(value)
 )
 
 class InvalidApiDeclarationException(value: KSAnnotated) : ApiException(
