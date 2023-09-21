@@ -19,3 +19,6 @@ val KSAnnotation.qualifiedName get() = declaration.qualifiedName?.asString()
 val KSClassDeclaration.isInterface get() = classKind == ClassKind.INTERFACE
 
 inline fun <reified Annotation> KSAnnotation.isSameWith() = qualifiedName == Annotation::class.qualifiedName
+
+inline fun <reified Type> Sequence<KSAnnotation>.filterAnnotationType() =
+    filter { it.qualifiedName == Type::class.qualifiedName }

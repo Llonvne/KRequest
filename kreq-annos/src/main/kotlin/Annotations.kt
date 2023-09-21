@@ -20,9 +20,11 @@ annotation class GET(val uri: String)
 @Target(AnnotationTarget.FUNCTION)
 annotation class POST(val uri: String)
 
-
 @Target(AnnotationTarget.VALUE_PARAMETER)
 annotation class Path(val name: String)
 
 @Target(AnnotationTarget.VALUE_PARAMETER)
 annotation class PostBody
+
+@Target(AnnotationTarget.CLASS)
+annotation class GeneratedCode(val value: String)

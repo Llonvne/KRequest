@@ -15,6 +15,10 @@ import context.SymbolProcessorContext
 typealias FunBuilder = FunSpec.Builder
 typealias TypeBuilder = TypeSpec.Builder
 
+inline fun FunBuilder.configure(block: FunBuilder.() -> Unit) = apply { block() }
+
+inline fun TypeBuilder.configure(block: TypeBuilder.() -> Unit) = apply { block() }
+
 fun FunBuilder.addNotImplementedError() = addStatement("throw NotImplementedError()")
 
 fun FunBuilder.addBaseUrlParameter() = addParameter(Constants.BASE_URL_VAR, String::class)
@@ -89,3 +93,9 @@ fun FunSpec.Builder.buildNewCall(responseVarName: String, requestVarName: String
 context (SymbolProcessorContext)
 fun FunSpec.Builder.addCreateNewInstanceStatement(instanceVarName: String, className: ClassName) =
     addStatement("val $instanceVarName = %T()", className)
+
+fun FunSpec.Companion.builder(name: String, configuration: FunSpec.Builder.() -> Unit): FunSpec.Builder =
+    FunSpec.builder(name).apply(configuration)
+
+fun TypeSpec.Companion.classBuilder(name: String, configuration: TypeBuilder.() -> Unit) =
+    classBuilder(name).apply(configuration)

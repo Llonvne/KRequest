@@ -3,24 +3,25 @@ package httpMethodCodeGenerator
 import PostBodyMoreThanOneException
 import PostBodyNeededException
 import com.google.devtools.ksp.symbol.KSValueParameter
+import com.squareup.kotlinpoet.FunSpec
 import context.HttpMethodBuildContext
 import context.SymbolProcessorContext
 import utils.hasPostBodyAnnotation
 import utils.typeIsRequestBody
 
-context (SymbolProcessorContext, context.ApiBuildContext, com.squareup.kotlinpoet.FunSpec.Builder)
 open class PostMethodCodeGenerator(private val methodCtx: HttpMethodBuildContext) : HttpMethodCodeGenerator {
-    override fun resolve() = methodCtx.scoped {
+    context (SymbolProcessorContext, context.ApiBuildContext, FunSpec.Builder)
+    override fun resolve() = methodCtx {
         postMethod()
         resolveUrl(methodCtx)
     }
 
     override fun supportMethod() = HttpMethods.POST
 
-    context (HttpMethodBuildContext)
-    private fun postMethod() = addStatement(".post(%L)", resolvePostBodyVarName())
+    context (SymbolProcessorContext, HttpMethodBuildContext)
+    private fun FunSpec.Builder.postMethod() = addStatement(".post(%L)", resolvePostBodyVarName())
 
-    context (HttpMethodBuildContext)
+    context (SymbolProcessorContext, HttpMethodBuildContext)
     private fun resolvePostBodyVarName(): String {
         val matchedParameters = methodCtx.parameters
             .filter { it.hasPostBodyAnnotation() && it.typeIsRequestBody(resolver) }
