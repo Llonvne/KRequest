@@ -10,5 +10,5 @@ data class HttpMethodBuildContext(
     val httpMethodAnnotation: KSAnnotation,
     val parameters: List<KSValueParameter>
 ) {
-    fun scoped(block: context(HttpMethodBuildContext)() -> Unit) = block()
+    fun scoped(block: context(HttpMethodBuildContext) () -> Unit) = block(this)
 }

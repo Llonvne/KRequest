@@ -4,6 +4,8 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import context.SymbolProcessorContext
+import utils.getSymbolsWithAnnotation
+import utils.isInterface
 
 open class LlonvneSymbolProcessor(private val env: SymbolProcessorEnvironment) : SymbolProcessor {
     private val poetResolver = KotlinPoetResolver(env)

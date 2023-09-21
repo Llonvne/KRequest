@@ -1,4 +1,3 @@
-import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
@@ -8,6 +7,7 @@ import context.HttpMethodBuildContext
 import httpMethodCodeGenerator.GetMethodCodeGenerator
 import httpMethodCodeGenerator.PostMethodCodeGenerator
 import httpMethodCodeGenerator.finishRequestBuild
+import utils.*
 
 context (context.SymbolProcessorContext, context.ApiBuildContext)
 class ApiFuncResolver(
@@ -18,7 +18,8 @@ class ApiFuncResolver(
         assertAnnotatedWithHttpMethodImpl()
         val functionAnnotations = apiFunctionLevelAnnotations()
         val httpMethodAnnotation = extractHttpMethod()
-        val httpMethodBuildContext = HttpMethodBuildContext(decl, functionAnnotations, httpMethodAnnotation, decl.parameters)
+        val httpMethodBuildContext =
+            HttpMethodBuildContext(decl, functionAnnotations, httpMethodAnnotation, decl.parameters)
 
         val impl = FunSpec.builder(decl.simpleName.asString())
             .returnSameAs(decl)
@@ -53,7 +54,7 @@ class ApiFuncResolver(
     private fun FunSpec.Builder.initializeRequestObject() {
         addStatement(
             "val request = %T()",
-            resolver.getClassDeclarationByName(okHttpRequestBuilderFqName)?.toClassName()!!
+            resolver.getClassDeclarationByNameOrException(okHttpRequestBuilderFqName).toClassName()
         )
     }
 

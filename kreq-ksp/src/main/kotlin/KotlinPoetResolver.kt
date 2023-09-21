@@ -1,4 +1,3 @@
-import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -9,6 +8,7 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
 import context.ApiBuildContext
 import context.SymbolProcessorContext
+import utils.*
 import java.util.function.Supplier
 
 class KotlinPoetResolver(
@@ -24,8 +24,7 @@ class KotlinPoetResolver(
         assertIsApiAnnotated(api)
         assertNotRegistered(api)
 
-        val okHttpClientDecl =
-            resolver.getClassDeclarationByName("okhttp3.OkHttpClient") ?: throw OkHttpClientNotFoundException()
+        val okHttpClientDecl = resolver.getClassDeclarationByNameOrException("okhttp3.OkHttpClient")
 
         val func = FunSpec.builder(api.toClassName().simpleName)
 
