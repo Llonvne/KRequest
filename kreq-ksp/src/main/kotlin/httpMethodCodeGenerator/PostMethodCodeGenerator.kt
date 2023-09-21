@@ -1,31 +1,52 @@
 package httpMethodCodeGenerator
 
 import PostBody
+import PostBodyMoreThanOneException
+import PostBodyNeededException
 import com.google.devtools.ksp.getClassDeclarationByName
-import context.AnnotationContext
+import com.google.devtools.ksp.symbol.KSValueParameter
+import context.HttpMethodBuildContext
 import context.SymbolProcessorContext
 
 context (SymbolProcessorContext, context.ApiBuildContext, com.squareup.kotlinpoet.FunSpec.Builder)
-class PostMethodCodeGenerator(private val annotationContext: AnnotationContext) {
-    fun resolve() {
-        addStatement(".post(%L)", resolvePostBodyVarName())
-        annotationContext.resolveUrl()
+open class PostMethodCodeGenerator(private val methodCtx: HttpMethodBuildContext) {
+    fun resolve() = methodCtx.scoped {
+        postMethod()
+        resolveUrl(methodCtx)
     }
+
+    context (HttpMethodBuildContext)
+    private fun postMethod() = addStatement(".post(%L)", resolvePostBodyVarName())
 
     private val requestBodyDecl = resolver.getClassDeclarationByName("okhttp3.RequestBody")?.asStarProjectedType()!!
 
+    private fun KSValueParameter.hasPostBodyAnnotation() =
+        annotations.filter { anno -> anno.isSameWith<PostBody>() }.toList().isNotEmpty()
+
+    private fun KSValueParameter.typeIsRequestBody() = type.resolve().isAssignableFrom(requestBodyDecl)
+
+    context (HttpMethodBuildContext)
     private fun resolvePostBodyVarName(): String {
-        val matchedParameters = annotationContext.parameters
-            .filter {
-                it.annotations.filter {
-                    it.isSameWith<PostBody>()
-                }.toList().isNotEmpty()
-                        &&
-                        it.type.resolve().isAssignableFrom(requestBodyDecl)
-            }
-        return when (matchedParameters.size) {
+        val matchedParameters = methodCtx.parameters
+            .filter { it.hasPostBodyAnnotation() && it.typeIsRequestBody() }
+        return when (val size = matchedParameters.size) {
             1 -> matchedParameters[0].name?.getShortName()!!
-            else -> throw IllegalArgumentException("PostBody 注解数量为 ${matchedParameters.size} 需要为 1")
+            else -> invalidPostBody(matchedParameters)
         }
     }
+
+    /**
+     * 该方法允许你重写但遇到多个或者零个 PostBody 的情形
+     * 默认情况下，找不到时将抛出 [PostBodyNeededException]
+     * 超过一个的时候抛出 [PostBodyMoreThanOneException]
+     */
+    context (HttpMethodBuildContext)
+    protected open fun invalidPostBody(hasPostBodyParameters: List<KSValueParameter>): Nothing =
+        when (val size = hasPostBodyParameters.size) {
+            0 -> throw PostBodyNeededException(declaration)
+            else -> throw PostBodyMoreThanOneException(size, declaration)
+        }
 }
+
+
+

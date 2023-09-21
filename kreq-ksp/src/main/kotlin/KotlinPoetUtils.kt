@@ -7,12 +7,16 @@ import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
+import context.SymbolProcessorContext
 
-fun FunSpec.Builder.addNotImplementedError() = addStatement("throw NotImplementedError()")
+typealias FunBuilder = FunSpec.Builder
+typealias TypeBuilder = TypeSpec.Builder
 
-fun FunSpec.Builder.addBaseUrlParameter() = addParameter(Constants.BASE_URL_VAR, String::class)
+fun FunBuilder.addNotImplementedError() = addStatement("throw NotImplementedError()")
 
-fun TypeSpec.Builder.addBaseUrlPropertyWithInitializer() =
+fun FunBuilder.addBaseUrlParameter() = addParameter(Constants.BASE_URL_VAR, String::class)
+
+fun TypeBuilder.addBaseUrlPropertyWithInitializer() =
     addProperty(
         PropertySpec
             .builder(Constants.BASE_URL_VAR, String::class, KModifier.PRIVATE)
@@ -20,7 +24,7 @@ fun TypeSpec.Builder.addBaseUrlPropertyWithInitializer() =
             .build()
     )
 
-fun TypeSpec.Builder.addOkHttpClientPropertyWithInitializer(okHttpKSClassDeclaration: KSClassDeclaration) =
+fun TypeBuilder.addOkHttpClientPropertyWithInitializer(okHttpKSClassDeclaration: KSClassDeclaration) =
     addProperty(
         PropertySpec
             .builder(Constants.OK_HTTP_CLIENT_VAR, okHttpKSClassDeclaration.toClassName(), KModifier.PRIVATE)
@@ -28,34 +32,28 @@ fun TypeSpec.Builder.addOkHttpClientPropertyWithInitializer(okHttpKSClassDeclara
             .build()
     )
 
-fun FunSpec.Builder.returnApiType(api: KSClassDeclaration) {
+context (SymbolProcessorContext)
+fun FunBuilder.returnApiType(api: KSClassDeclaration) {
     assertIsApiAnnotated(api)
     returns(api.asStarProjectedType().toTypeName())
 }
 
-fun FunSpec.Builder.useApisAsReceiver() = receiver(Apis::class)
-
-fun TypeSpec.Builder.setApiSuperInterface(api: KSClassDeclaration): TypeSpec.Builder {
+fun FunBuilder.useApisAsReceiver() = receiver(Apis::class)
+context (SymbolProcessorContext)
+fun TypeBuilder.setApiSuperInterface(api: KSClassDeclaration) = run {
     assertIsApiAnnotated(api)
-    return addSuperinterface(api.asStarProjectedType().toTypeName())
+    addSuperinterface(api.asStarProjectedType().toTypeName())
 }
 
-fun TypeSpec.Builder.setPrivateType(): TypeSpec.Builder {
-    modifiers.add(KModifier.PRIVATE)
-    return this
-}
+fun TypeBuilder.setPrivateType() = apply { modifiers.add(KModifier.PRIVATE) }
 
-fun FunSpec.Builder.setOverride(): FunSpec.Builder {
-    modifiers.add(KModifier.OVERRIDE)
-    return this
-}
+fun FunBuilder.setOverride() = apply { modifiers.add(KModifier.OVERRIDE) }
 
-fun FunSpec.Builder.returnSameAs(func: KSFunctionDeclaration) = returns(func.returnType?.toTypeName()!!)
+fun FunBuilder.returnSameAs(func: KSFunctionDeclaration) = returns(func.returnType?.toTypeName()!!)
 
-fun FunSpec.Builder.importParameters(declaration: KSFunctionDeclaration): FunSpec.Builder {
+fun FunBuilder.importParameters(declaration: KSFunctionDeclaration) = apply {
     declaration.parameters.toList()
         .forEach { addParameter(it.name?.asString()!!, it.type.toTypeName()) }
-    return this
 }
 
 /**
@@ -63,6 +61,7 @@ fun FunSpec.Builder.importParameters(declaration: KSFunctionDeclaration): FunSpe
  * 如果没有，抛出 [NotAValidApiForReturnValue] 异常
  * @throws NotAValidApiForReturnValue
  */
+context (SymbolProcessorContext)
 fun assertIsApiAnnotated(api: KSClassDeclaration) {
     api.getAnnotationsByType(Api::class)
         .toList()

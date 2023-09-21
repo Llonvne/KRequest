@@ -1,12 +1,13 @@
 package httpMethodCodeGenerator
 
+import FunBuilder
 import Path
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSValueParameter
 import com.squareup.kotlinpoet.FunSpec
-import context.AnnotationContext
+import context.HttpMethodBuildContext
 
-val AnnotationContext.buildUrl: String
+val HttpMethodBuildContext.buildUrl: String
     get() {
         return useVarInString("baseUrl") + this.httpMethodAnnotation.arguments.first {
             it.name?.asString() == "uri"
@@ -14,13 +15,13 @@ val AnnotationContext.buildUrl: String
     }
 
 context (FunSpec.Builder)
-fun AnnotationContext.resolveUrl() {
-    val pathVars = matchPathVar(buildUrl)
+fun FunBuilder.resolveUrl(annoCtx: HttpMethodBuildContext) {
+    val pathVars = matchPathVar(annoCtx.buildUrl)
     val pathVarsMap = pathVars.associateWith {
-        parameters.findPathWithSameName(it).name?.asString()!!
+        annoCtx.parameters.findPathWithSameName(it).name?.asString()!!
     }
 
-    addStatement(".url(%L)", varToString(replaceWithMapValues(buildUrl, pathVarsMap)))
+    addStatement(".url(%L)", varToString(replaceWithMapValues(annoCtx.buildUrl, pathVarsMap)))
 }
 
 fun replaceWithMapValues(input: String, replacements: Map<String, String>): String {

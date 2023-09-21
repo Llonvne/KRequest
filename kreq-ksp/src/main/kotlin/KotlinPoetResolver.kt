@@ -9,11 +9,12 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
 import context.ApiBuildContext
 import context.SymbolProcessorContext
+import java.util.function.Supplier
 
 class KotlinPoetResolver(
     private val environment: SymbolProcessorEnvironment, filename: String = "ApisExtensions"
 ) {
-    val file = FileSpec.builder("", filename)
+    private val file = FileSpec.builder("", filename)
     private val apiCache = mutableMapOf<KSClassDeclaration, ApiBuildContext>()
 
     context (SymbolProcessorContext)
@@ -27,31 +28,47 @@ class KotlinPoetResolver(
             resolver.getClassDeclarationByName("okhttp3.OkHttpClient") ?: throw OkHttpClientNotFoundException()
 
         val func = FunSpec.builder(api.toClassName().simpleName)
-        func.receiver(Apis::class).useApisAsReceiver().addBaseUrlParameter().addOkHttpClientParameter(okHttpClientDecl)
-            .addStatementReturnApiImplWithBaseUrl(api).returnApiType(api)
 
-        val type = TypeSpec.classBuilder(api.apiImplClassName()).setApiSuperInterface(api).setPrivateType()
+        func.useApisAsReceiver()
+            .addBaseUrlParameter()
+            .addOkHttpClientParameter(okHttpClientDecl)
+            .addStatementReturnApiImplWithBaseUrl(api)
+            .returnApiType(api)
+
+        val type = TypeSpec.classBuilder(api.apiImplClassName())
+            .setApiSuperInterface(api)
+            .setPrivateType()
             .addPrimaryConstructorWithBaseUrlAndOkHttpClientParameter(okHttpClientDecl)
 
-        val context = ApiBuildContext(func, type)
-        apiCache[api] = context
 
-        context.scoped(scoped)
+        createCachedApiContext(api) { ApiBuildContext(func, type) }
+            .scoped(scoped)
+    }
+
+    private fun createCachedApiContext(
+        api: KSClassDeclaration,
+        ctxSupplier: Supplier<ApiBuildContext>
+    ): ApiBuildContext {
+        val ctx = ctxSupplier.get()
+        apiCache[api] = ctx
+        return ctx
     }
 
     fun generate() {
         apiCache.values.forEach {
-                file.addFunction(it.func.build())
-                file.addType(it.cls.build())
-            }
+            file.addFunction(it.func.build())
+            file.addType(it.cls.build())
+        }
         return file.build().writeTo(environment.codeGenerator, Dependencies(false))
     }
 
+    context (SymbolProcessorContext)
     private fun KSClassDeclaration.apiImplClassName(): String {
         assertIsApiAnnotated(this)
         return "${simpleName.asString()}Impl"
     }
 
+    context (SymbolProcessorContext)
     private fun FunSpec.Builder.addStatementReturnApiImplWithBaseUrl(api: KSClassDeclaration) =
         addStatement("return ${api.apiImplClassName()}(${Constants.BASE_URL_VAR},${Constants.OK_HTTP_CLIENT_VAR})")
 

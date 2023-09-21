@@ -12,8 +12,6 @@ data class SymbolProcessorContext(
     val logger: KSPLogger
 )
 
-fun SymbolProcessorContext.scoped(scoped: SymbolProcessorContext.() -> Unit) {
-    scoped()
-}
+fun SymbolProcessorContext.scoped(scoped: SymbolProcessorContext.() -> Unit) = scoped()
 
 

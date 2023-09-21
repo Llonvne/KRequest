@@ -1,14 +1,14 @@
 package httpMethodCodeGenerator
 
 import com.squareup.kotlinpoet.FunSpec.Builder
-import context.AnnotationContext
+import context.HttpMethodBuildContext
 import context.SymbolProcessorContext
 
 context (SymbolProcessorContext, context.ApiBuildContext, Builder)
-class GetMethodCodeGenerator(private val annotationContext: AnnotationContext) {
+class GetMethodCodeGenerator(private val httpMethodBuildContext: HttpMethodBuildContext) {
     fun resolve() {
         getMethod()
-        annotationContext.resolveUrl()
+        resolveUrl(httpMethodBuildContext)
     }
 
     private fun getMethod() = addStatement(".get()")

@@ -4,7 +4,7 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.ksp.toClassName
-import context.AnnotationContext
+import context.HttpMethodBuildContext
 import httpMethodCodeGenerator.GetMethodCodeGenerator
 import httpMethodCodeGenerator.PostMethodCodeGenerator
 import httpMethodCodeGenerator.finishRequestBuild
@@ -18,13 +18,13 @@ class ApiFuncResolver(
         assertAnnotatedWithHttpMethodImpl()
         val functionAnnotations = apiFunctionLevelAnnotations()
         val httpMethodAnnotation = extractHttpMethod()
-        val annotationContext = AnnotationContext(functionAnnotations, httpMethodAnnotation, decl.parameters)
+        val httpMethodBuildContext = HttpMethodBuildContext(decl, functionAnnotations, httpMethodAnnotation, decl.parameters)
 
         val impl = FunSpec.builder(decl.simpleName.asString())
             .returnSameAs(decl)
             .setOverride()
             .importParameters(decl)
-            .buildRequest(annotationContext)
+            .buildRequest(httpMethodBuildContext)
             .finishRequestBuild()
             .buildNewCall()
             .executeCall()
@@ -45,9 +45,9 @@ class ApiFuncResolver(
     private fun FunSpec.Builder.buildNewCall() =
         addStatement("val $respVar = ${Constants.OK_HTTP_CLIENT_VAR}.newCall(request)")
 
-    private fun FunSpec.Builder.buildRequest(annotationContext: AnnotationContext) = apply {
+    private fun FunSpec.Builder.buildRequest(httpMethodBuildContext: HttpMethodBuildContext) = apply {
         initializeRequestObject()
-        dispatchOnHttpMethod(annotationContext)
+        dispatchOnHttpMethod(httpMethodBuildContext)
     }
 
     private fun FunSpec.Builder.initializeRequestObject() {
@@ -57,19 +57,19 @@ class ApiFuncResolver(
         )
     }
 
-    private fun FunSpec.Builder.dispatchOnHttpMethod(annotationContext: AnnotationContext) {
-        when (annotationContext.httpMethodStrRepresent) {
+    private fun FunSpec.Builder.dispatchOnHttpMethod(httpMethodBuildContext: HttpMethodBuildContext) {
+        when (httpMethodBuildContext.httpMethodStrRepresent) {
             "get" -> {
-                GetMethodCodeGenerator(annotationContext).resolve()
+                GetMethodCodeGenerator(httpMethodBuildContext).resolve()
             }
 
             "post" -> {
-                PostMethodCodeGenerator(annotationContext).resolve()
+                PostMethodCodeGenerator(httpMethodBuildContext).resolve()
             }
         }
     }
 
-    private val AnnotationContext.httpMethodStrRepresent: String get() = httpMethodAnnotation.simpleName.lowercase()
+    private val HttpMethodBuildContext.httpMethodStrRepresent: String get() = httpMethodAnnotation.simpleName.lowercase()
 
 
     private fun extractHttpMethod(): KSAnnotation = decl.annotations

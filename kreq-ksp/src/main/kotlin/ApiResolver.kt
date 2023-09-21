@@ -8,7 +8,7 @@ class ApiResolver(private val api: KSClassDeclaration) {
 
         fun assertApiClassWithoutTypeParameter() {
             if (api.typeParameters.isNotEmpty()) {
-                throw ApiAnnotatedInterfaceNotSupportTypeParameter(api)
+                logger.exception(ApiAnnotatedInterfaceNotSupportTypeParameter(api))
             }
         }
 
@@ -24,16 +24,16 @@ class ApiResolver(private val api: KSClassDeclaration) {
 
 
     @Suppress(Constants.UNCHECKED_CAST)
-    private fun Sequence<KSDeclaration>.filterAbstractFunction(): Sequence<KSFunctionDeclaration> = filter {
+    private fun Sequence<KSDeclaration>.filterAbstractFunction(): Sequence<KSFunctionDeclaration> = filter { decl ->
 
         fun processOnNotKSFunctionDeclarationOrAbstract(value: KSDeclaration) {
             logger.exception(InvalidApiAbstractFunctionDeclarationException(value))
         }
 
-        if (it is KSFunctionDeclaration && it.isAbstract) {
+        if (decl is KSFunctionDeclaration && decl.isAbstract) {
             true
         } else {
-            processOnNotKSFunctionDeclarationOrAbstract(it)
+            processOnNotKSFunctionDeclarationOrAbstract(decl)
             false
         }
     } as Sequence<KSFunctionDeclaration>
