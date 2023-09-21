@@ -32,18 +32,14 @@ class ApiAnnotatedInterfaceNotSupportTypeParameter(api: KSClassDeclaration) : Ap
     "$api do not support type parameter".withLocation(api)
 )
 
-class ApiMemberFunctionMustAnnotatedWithHttpMethodAnnotation(api: KSClassDeclaration, func: KSFunctionDeclaration) :
-    ApiException(
-        "$api.$func must annotated with HttpMethod annotation".withLocation(api)
-    )
+class ApiMemberFunctionMustAnnotatedWithHttpMethod(api: KSClassDeclaration, func: KSFunctionDeclaration) :
+    ApiException("$api.$func must annotated with HttpMethod annotation".withLocation(api))
 
 fun Location.format() = when (this) {
     is NonExistLocation -> "cannot find code location..."
     is FileLocation -> "${this.filePath}:${this.lineNumber}"
     else -> "error in location finding..."
 }
-
-class OkHttpClientNotFoundException : ApiException("OkHttpClient not found ...")
 
 class HttpMethodShouldBeUniqueOnOneMethod(annotations: List<KSAnnotation>, func: KSFunctionDeclaration) : ApiException(
     "HttpMethod should be unique on a method: ${annotations.size} found! ".withLocation(func)
@@ -54,4 +50,8 @@ class PostBodyNeededException(decl: KSFunctionDeclaration) :
 
 class PostBodyMoreThanOneException(size: Int, decl: KSFunctionDeclaration) : ApiException(
     "PostBody 注解数量为 $size ,仅需要一个 PostBody!".withLocation(decl)
+)
+
+class KSClassDeclarationNotFound(name: String) : ApisInternalException(
+    "class $name not found when in ksp!"
 )

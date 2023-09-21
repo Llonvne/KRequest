@@ -1,18 +1,15 @@
 package httpMethodCodeGenerator
 
-import Constants
 import Path
-import com.google.devtools.ksp.symbol.KSAnnotation
-import com.google.devtools.ksp.symbol.KSValueArgument
 import com.google.devtools.ksp.symbol.KSValueParameter
 import com.squareup.kotlinpoet.FunSpec
 import context.HttpMethodBuildContext
+import context.buildUrl
 import utils.FunBuilder
+import utils.isSameWith
+import utils.useVar
+import utils.varToString
 
-val HttpMethodBuildContext.buildUrl get() = Var(Constants.BASE_URL_VAR) + httpMethodAnnotation.arguments.uri
-
-
-val List<KSValueArgument>.uri get() = first { it.name?.asString() == "uri" }.value as String
 
 context (FunSpec.Builder)
 fun FunBuilder.resolveUrl(annoCtx: HttpMethodBuildContext) {
@@ -28,7 +25,7 @@ fun replaceWithMapValues(input: String, replacements: Map<String, String>): Stri
     var result = input
     replacements.forEach { (key, value) ->
         val pattern = """\{$key\}""".toRegex()
-        result = result.replace(pattern, Var(value))
+        result = result.replace(pattern, useVar(value))
     }
     return result
 }
@@ -50,12 +47,5 @@ private fun matchPathVar(input: String): List<String> {
     val pattern = """\{(.*?)\}""".toRegex()
     return pattern.findAll(input).toList().map { it.groupValues[1] }
 }
-
-inline fun <reified Annotation> KSAnnotation.isSameWith() = annotationType
-    .resolve().declaration.qualifiedName?.asString() == Annotation::class.qualifiedName
-
-fun Var(name: String) = "\"+$name+\""
-
-fun varToString(name: String) = "\"$name\""
 
 fun FunSpec.Builder.finishRequestBuild() = addStatement(".build()")

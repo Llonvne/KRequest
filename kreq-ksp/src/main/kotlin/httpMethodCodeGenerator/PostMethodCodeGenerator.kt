@@ -1,34 +1,29 @@
 package httpMethodCodeGenerator
 
-import PostBody
 import PostBodyMoreThanOneException
 import PostBodyNeededException
 import com.google.devtools.ksp.symbol.KSValueParameter
 import context.HttpMethodBuildContext
 import context.SymbolProcessorContext
-import utils.getClassDeclarationByNameOrException
+import utils.hasPostBodyAnnotation
+import utils.typeIsRequestBody
 
 context (SymbolProcessorContext, context.ApiBuildContext, com.squareup.kotlinpoet.FunSpec.Builder)
-open class PostMethodCodeGenerator(private val methodCtx: HttpMethodBuildContext) {
-    fun resolve() = methodCtx.scoped {
+open class PostMethodCodeGenerator(private val methodCtx: HttpMethodBuildContext) : HttpMethodCodeGenerator {
+    override fun resolve() = methodCtx.scoped {
         postMethod()
         resolveUrl(methodCtx)
     }
 
+    override fun supportMethod() = HttpMethods.POST
+
     context (HttpMethodBuildContext)
     private fun postMethod() = addStatement(".post(%L)", resolvePostBodyVarName())
 
-    private val requestBodyDecl =
-        resolver.getClassDeclarationByNameOrException("okhttp3.RequestBody").asStarProjectedType()
-
-    private fun KSValueParameter.hasPostBodyAnnotation() =
-        annotations.filter { anno -> anno.isSameWith<PostBody>() }.toList().isNotEmpty()
-
-    private fun KSValueParameter.typeIsRequestBody() = type.resolve().isAssignableFrom(requestBodyDecl)
     context (HttpMethodBuildContext)
     private fun resolvePostBodyVarName(): String {
         val matchedParameters = methodCtx.parameters
-            .filter { it.hasPostBodyAnnotation() && it.typeIsRequestBody() }
+            .filter { it.hasPostBodyAnnotation() && it.typeIsRequestBody(resolver) }
         return when (matchedParameters.size) {
             1 -> matchedParameters[0].name?.getShortName()!!
             else -> invalidPostBody(matchedParameters)

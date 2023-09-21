@@ -17,3 +17,5 @@ val KSAnnotation.simpleName get() = declaration.simpleName.asString()
 val KSAnnotation.qualifiedName get() = declaration.qualifiedName?.asString()
 
 val KSClassDeclaration.isInterface get() = classKind == ClassKind.INTERFACE
+
+inline fun <reified Annotation> KSAnnotation.isSameWith() = qualifiedName == Annotation::class.qualifiedName

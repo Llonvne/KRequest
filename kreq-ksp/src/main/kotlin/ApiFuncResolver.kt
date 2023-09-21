@@ -4,8 +4,7 @@ import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.ksp.toClassName
 import context.HttpMethodBuildContext
-import httpMethodCodeGenerator.GetMethodCodeGenerator
-import httpMethodCodeGenerator.PostMethodCodeGenerator
+import httpMethodCodeGenerator.HttpMethodCodeGeneratorDispatcher
 import httpMethodCodeGenerator.finishRequestBuild
 import utils.*
 
@@ -14,6 +13,8 @@ class ApiFuncResolver(
     private val api: KSClassDeclaration,
     private val decl: KSFunctionDeclaration
 ) {
+    private val httpMethodCodeGeneratorDispatcher = HttpMethodCodeGeneratorDispatcher()
+
     fun resolve() {
         assertAnnotatedWithHttpMethodImpl()
         val functionAnnotations = apiFunctionLevelAnnotations()
@@ -21,57 +22,38 @@ class ApiFuncResolver(
         val httpMethodBuildContext =
             HttpMethodBuildContext(decl, functionAnnotations, httpMethodAnnotation, decl.parameters)
 
-        val impl = FunSpec.builder(decl.simpleName.asString())
-            .returnSameAs(decl)
-            .setOverride()
-            .importParameters(decl)
-            .buildRequest(httpMethodBuildContext)
-            .finishRequestBuild()
-            .buildNewCall()
-            .executeCall()
-            .buildResponse()
+        val impl = FunSpec.builder(decl.simpleName.asString()).apply {
+            returnSameAs(decl)
+            setOverride()
+            importParameters(decl)
+            buildRequest(httpMethodBuildContext)
+            finishRequestBuild()
+            buildNewCall(respVar, requestVar)
+            executeCall()
+            buildResponse()
+        }
         cls.addFunction(impl.build())
     }
 
     private fun FunSpec.Builder.buildResponse() = apply {
-        if (decl.returnType?.resolve()?.declaration?.qualifiedName?.asString() == "okhttp3.Response") {
-            addStatement("return $respVar")
+        if (decl.isReturnTypeQualifiedNameEquals("okhttp3.Response")) {
+            buildReturnStatement(respVar)
         }
     }
-
-    private fun FunSpec.Builder.executeCall() = addStatement(".execute()")
 
     private val respVar = "resp"
-
-    private fun FunSpec.Builder.buildNewCall() =
-        addStatement("val $respVar = ${Constants.OK_HTTP_CLIENT_VAR}.newCall(request)")
-
-    private fun FunSpec.Builder.buildRequest(httpMethodBuildContext: HttpMethodBuildContext) = apply {
-        initializeRequestObject()
-        dispatchOnHttpMethod(httpMethodBuildContext)
-    }
-
-    private fun FunSpec.Builder.initializeRequestObject() {
-        addStatement(
-            "val request = %T()",
-            resolver.getClassDeclarationByNameOrException(okHttpRequestBuilderFqName).toClassName()
+    private val requestVar = "request"
+    private val okHttpRequestBuilderFqName = "okhttp3.Request.Builder"
+    private val okHttpRequestBuilderDecl
+        get() = resolver.getClassDeclarationByNameOrException(
+            okHttpRequestBuilderFqName
         )
+
+
+    private fun FunSpec.Builder.buildRequest(httpCtx: HttpMethodBuildContext) = apply {
+        addCreateNewInstanceStatement(requestVar, okHttpRequestBuilderDecl.toClassName())
+        httpMethodCodeGeneratorDispatcher.dispatch(httpCtx)
     }
-
-    private fun FunSpec.Builder.dispatchOnHttpMethod(httpMethodBuildContext: HttpMethodBuildContext) {
-        when (httpMethodBuildContext.httpMethodStrRepresent) {
-            "get" -> {
-                GetMethodCodeGenerator(httpMethodBuildContext).resolve()
-            }
-
-            "post" -> {
-                PostMethodCodeGenerator(httpMethodBuildContext).resolve()
-            }
-        }
-    }
-
-    private val HttpMethodBuildContext.httpMethodStrRepresent: String get() = httpMethodAnnotation.simpleName.lowercase()
-
 
     private fun extractHttpMethod(): KSAnnotation = decl.annotations
         .toList().first { httpMethodQualifiedNameSet.contains(it.qualifiedName) }
@@ -84,7 +66,7 @@ class ApiFuncResolver(
                     it.qualifiedName == HttpMethod::class.qualifiedName
                 }
             }.toList().ifEmpty {
-                logger.exception(ApiMemberFunctionMustAnnotatedWithHttpMethodAnnotation(api, decl))
+                logger.exception(ApiMemberFunctionMustAnnotatedWithHttpMethod(api, decl))
             } as List<KSAnnotation>
         if (annotations.size > 1) {
             throw HttpMethodShouldBeUniqueOnOneMethod(annotations, decl)
@@ -99,5 +81,5 @@ class ApiFuncResolver(
 
     private fun apiFunctionLevelAnnotations() = decl.annotations.toList()
 
-    private val okHttpRequestBuilderFqName = "okhttp3.Request.Builder"
+
 }

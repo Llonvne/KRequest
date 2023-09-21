@@ -7,10 +7,7 @@ import NotAValidApiForReturnValue
 import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.PropertySpec
-import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import context.SymbolProcessorContext
@@ -76,3 +73,19 @@ fun assertIsApiAnnotated(api: KSClassDeclaration) {
         }
 }
 
+fun useVar(name: String) = "\"+$name+\""
+
+fun varToString(name: String) = "\"$name\""
+
+fun FunSpec.Builder.buildReturnStatement(varName: String) {
+    addStatement("return $varName")
+}
+
+fun FunSpec.Builder.executeCall() = addStatement(".execute()")
+
+fun FunSpec.Builder.buildNewCall(responseVarName: String, requestVarName: String) =
+    addStatement("val $responseVarName = ${Constants.OK_HTTP_CLIENT_VAR}.newCall($requestVarName)")
+
+context (SymbolProcessorContext)
+fun FunSpec.Builder.addCreateNewInstanceStatement(instanceVarName: String, className: ClassName) =
+    addStatement("val $instanceVarName = %T()", className)
