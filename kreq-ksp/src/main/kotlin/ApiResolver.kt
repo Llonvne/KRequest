@@ -5,18 +5,14 @@ import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 context (context.SymbolProcessorContext)
 class ApiResolver(private val api: KSClassDeclaration) {
     fun resolve() {
-
         fun assertApiClassWithoutTypeParameter() {
             if (api.typeParameters.isNotEmpty()) {
                 logger.exception(ApiAnnotatedInterfaceNotSupportTypeParameter(api))
             }
         }
-
-        fun KSClassDeclaration.extractApiAbstractFunctionCandidates() = declarations.filterAbstractFunction()
-
         assertApiClassWithoutTypeParameter()
         fileResolver.registerApi(api) {
-            api.extractApiAbstractFunctionCandidates()
+            api.declarations.filterAbstractFunction()
                 .map { func -> ApiFuncResolver(api, func) }
                 .forEach(ApiFuncResolver::resolve)
         }
@@ -24,7 +20,7 @@ class ApiResolver(private val api: KSClassDeclaration) {
 
 
     @Suppress(Constants.UNCHECKED_CAST)
-    private fun Sequence<KSDeclaration>.filterAbstractFunction(): Sequence<KSFunctionDeclaration> = filter { decl ->
+    private fun Sequence<KSDeclaration>.filterAbstractFunction() = filter { decl ->
 
         fun processOnNotKSFunctionDeclarationOrAbstract(value: KSDeclaration) {
             logger.exception(InvalidApiAbstractFunctionDeclarationException(value))

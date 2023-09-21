@@ -23,9 +23,7 @@ open class KotlinPoetResolver(
      * * 实现类 类名 Api的类型+"Impl" 主构造函数函数为 baseUrl 和 okHttpClient
      */
     context (SymbolProcessorContext)
-    fun registerApi(
-        api: KSClassDeclaration, scoped: context(ApiBuildContext) () -> Unit
-    ) {
+    fun registerApi(api: KSClassDeclaration, scoped: context(ApiBuildContext) () -> Unit) {
         assertIsApiAnnotated(api)
         assertNotRegistered(api)
 
