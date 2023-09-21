@@ -57,3 +57,5 @@ inline fun <reified Annotation> KSAnnotation.isSameWith() = annotationType
 fun useVarInString(name: String) = "\"+$name+\""
 
 fun varToString(name: String) = "\"$name\""
+
+fun FunSpec.Builder.finishRequestBuild() = addStatement(".build()")

@@ -1,21 +1,11 @@
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 
-@Suppress("")
 fun main() {
-    val json = """
-        {
-            "key1": "value1",
-            "key2": "value2"
-        }
-    """.trimIndent()
-
-    val body = json.toRequestBody("application/json; charset=utf-8".toMediaType())
-
-    create<MyApi>("https://www.baidu.com", OkHttpClient())
-        .getUser(1, body)
+    println(
+        create<GitHubApi>("https://api.github.com", OkHttpClient())
+    )
 }
 
 inline fun <reified Type> create(baseUrl: String, okHttpClient: OkHttpClient): Type =
@@ -23,7 +13,14 @@ inline fun <reified Type> create(baseUrl: String, okHttpClient: OkHttpClient): T
         .constructors.first().newInstance(baseUrl, okHttpClient) as Type
 
 @Api
-interface MyApi {
-    @POST("/user/{id}")
-    fun getUser(@Path("id") userId: Int, @PostBody body: RequestBody)
+interface GitHubApi {
+    @GET("/users/{login}")
+    fun getUserAsync(@Path("login") login: String): Response
+
+    @POST("/users/{login}")
+    fun getUser(@Path("login") login: String, @PostBody body: RequestBody): Response
 }
+
+
+
+

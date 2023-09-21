@@ -8,37 +8,29 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
 import context.ApiBuildContext
-import context.LlonvneSymbolProcessorContext
+import context.SymbolProcessorContext
 
-class ApisExtensionsFileResolver(
-    private val environment: SymbolProcessorEnvironment,
-    filename: String = "ApisExtensions"
+class KotlinPoetResolver(
+    private val environment: SymbolProcessorEnvironment, filename: String = "ApisExtensions"
 ) {
     val file = FileSpec.builder("", filename)
     private val apiCache = mutableMapOf<KSClassDeclaration, ApiBuildContext>()
 
-    context (LlonvneSymbolProcessorContext)
+    context (SymbolProcessorContext)
     fun registerApi(
-        api: KSClassDeclaration,
-        scoped: context(ApiBuildContext) () -> Unit
+        api: KSClassDeclaration, scoped: context(ApiBuildContext) () -> Unit
     ) {
         assertIsApiAnnotated(api)
         assertNotRegistered(api)
 
-        val okHttpClientDecl = resolver.getClassDeclarationByName("okhttp3.OkHttpClient")
-            ?: throw OkHttpClientNotFoundException()
+        val okHttpClientDecl =
+            resolver.getClassDeclarationByName("okhttp3.OkHttpClient") ?: throw OkHttpClientNotFoundException()
 
         val func = FunSpec.builder(api.toClassName().simpleName)
-        func.receiver(Apis::class)
-            .useApisAsReceiver()
-            .addBaseUrlParameter()
-            .addOkHttpClientParameter(okHttpClientDecl)
-            .addStatementReturnApiImplWithBaseUrl(api)
-            .returnApiType(api)
+        func.receiver(Apis::class).useApisAsReceiver().addBaseUrlParameter().addOkHttpClientParameter(okHttpClientDecl)
+            .addStatementReturnApiImplWithBaseUrl(api).returnApiType(api)
 
-        val type = TypeSpec.classBuilder(api.apiImplClassName())
-            .setApiSuperInterface(api)
-            .setPrivateType()
+        val type = TypeSpec.classBuilder(api.apiImplClassName()).setApiSuperInterface(api).setPrivateType()
             .addPrimaryConstructorWithBaseUrlAndOkHttpClientParameter(okHttpClientDecl)
 
         val context = ApiBuildContext(func, type)
@@ -48,8 +40,7 @@ class ApisExtensionsFileResolver(
     }
 
     fun generate() {
-        apiCache.values
-            .forEach {
+        apiCache.values.forEach {
                 file.addFunction(it.func.build())
                 file.addType(it.cls.build())
             }
@@ -62,22 +53,17 @@ class ApisExtensionsFileResolver(
     }
 
     private fun FunSpec.Builder.addStatementReturnApiImplWithBaseUrl(api: KSClassDeclaration) =
-        addStatement("return ${api.apiImplClassName()}(baseUrl,okHttpClient)")
+        addStatement("return ${api.apiImplClassName()}(${Constants.BASE_URL_VAR},${Constants.OK_HTTP_CLIENT_VAR})")
 
     private fun TypeSpec.Builder.addPrimaryConstructorWithBaseUrlAndOkHttpClientParameter(okHttpClientDecl: KSClassDeclaration) =
         apply {
             primaryConstructor(
-                FunSpec.constructorBuilder()
-                    .addBaseUrlParameter()
-                    .addOkHttpClientParameter(okHttpClientDecl)
-                    .build()
-            )
-                .addBaseUrlPropertyWithInitializer()
-                .addOkHttpClientPropertyWithInitializer(okHttpClientDecl)
+                FunSpec.constructorBuilder().addBaseUrlParameter().addOkHttpClientParameter(okHttpClientDecl).build()
+            ).addBaseUrlPropertyWithInitializer().addOkHttpClientPropertyWithInitializer(okHttpClientDecl)
         }
 
     private fun FunSpec.Builder.addOkHttpClientParameter(okHttpClientDecl: KSClassDeclaration) =
-        addParameter("okHttpClient", okHttpClientDecl.toClassName())
+        addParameter(Constants.OK_HTTP_CLIENT_VAR, okHttpClientDecl.toClassName())
 
     private fun assertNotRegistered(api: KSClassDeclaration) {
         if (apiCache.contains(api)) {

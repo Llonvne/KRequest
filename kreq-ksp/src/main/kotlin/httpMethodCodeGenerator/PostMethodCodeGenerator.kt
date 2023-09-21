@@ -3,8 +3,9 @@ package httpMethodCodeGenerator
 import PostBody
 import com.google.devtools.ksp.getClassDeclarationByName
 import context.AnnotationContext
+import context.SymbolProcessorContext
 
-context (context.LlonvneSymbolProcessorContext, context.ApiBuildContext, com.squareup.kotlinpoet.FunSpec.Builder)
+context (SymbolProcessorContext, context.ApiBuildContext, com.squareup.kotlinpoet.FunSpec.Builder)
 class PostMethodCodeGenerator(private val annotationContext: AnnotationContext) {
     fun resolve() {
         addStatement(".post(%L)", resolvePostBodyVarName())

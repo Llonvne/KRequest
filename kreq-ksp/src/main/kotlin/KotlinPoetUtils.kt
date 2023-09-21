@@ -10,21 +10,21 @@ import com.squareup.kotlinpoet.ksp.toTypeName
 
 fun FunSpec.Builder.addNotImplementedError() = addStatement("throw NotImplementedError()")
 
-fun FunSpec.Builder.addBaseUrlParameter() = addParameter("baseUrl", String::class)
+fun FunSpec.Builder.addBaseUrlParameter() = addParameter(Constants.BASE_URL_VAR, String::class)
 
 fun TypeSpec.Builder.addBaseUrlPropertyWithInitializer() =
     addProperty(
         PropertySpec
-            .builder("baseUrl", String::class, KModifier.PRIVATE)
-            .initializer("baseUrl")
+            .builder(Constants.BASE_URL_VAR, String::class, KModifier.PRIVATE)
+            .initializer(Constants.BASE_URL_VAR)
             .build()
     )
 
 fun TypeSpec.Builder.addOkHttpClientPropertyWithInitializer(okHttpKSClassDeclaration: KSClassDeclaration) =
     addProperty(
         PropertySpec
-            .builder("okHttpClient", okHttpKSClassDeclaration.toClassName(), KModifier.PRIVATE)
-            .initializer("okHttpClient")
+            .builder(Constants.OK_HTTP_CLIENT_VAR, okHttpKSClassDeclaration.toClassName(), KModifier.PRIVATE)
+            .initializer(Constants.OK_HTTP_CLIENT_VAR)
             .build()
     )
 

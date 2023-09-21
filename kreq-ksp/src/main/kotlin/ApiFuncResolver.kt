@@ -7,8 +7,9 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import context.AnnotationContext
 import httpMethodCodeGenerator.GetMethodCodeGenerator
 import httpMethodCodeGenerator.PostMethodCodeGenerator
+import httpMethodCodeGenerator.finishRequestBuild
 
-context (context.LlonvneSymbolProcessorContext, context.ApiBuildContext)
+context (context.SymbolProcessorContext, context.ApiBuildContext)
 class ApiFuncResolver(
     private val api: KSClassDeclaration,
     private val decl: KSFunctionDeclaration
@@ -18,23 +19,42 @@ class ApiFuncResolver(
         val functionAnnotations = apiFunctionLevelAnnotations()
         val httpMethodAnnotation = extractHttpMethod()
         val annotationContext = AnnotationContext(functionAnnotations, httpMethodAnnotation, decl.parameters)
+
         val impl = FunSpec.builder(decl.simpleName.asString())
             .returnSameAs(decl)
             .setOverride()
             .importParameters(decl)
             .buildRequest(annotationContext)
-
+            .finishRequestBuild()
+            .buildNewCall()
+            .executeCall()
+            .buildResponse()
         cls.addFunction(impl.build())
     }
 
-    private val okHttpRequestBuilderFqName = "okhttp3.Request.Builder"
+    private fun FunSpec.Builder.buildResponse() = apply {
+        if (decl.returnType?.resolve()?.declaration?.qualifiedName?.asString() == "okhttp3.Response") {
+            addStatement("return $respVar")
+        }
+    }
+
+    private fun FunSpec.Builder.executeCall() = addStatement(".execute()")
+
+    private val respVar = "resp"
+
+    private fun FunSpec.Builder.buildNewCall() =
+        addStatement("val $respVar = ${Constants.OK_HTTP_CLIENT_VAR}.newCall(request)")
+
     private fun FunSpec.Builder.buildRequest(annotationContext: AnnotationContext) = apply {
         initializeRequestObject()
         dispatchOnHttpMethod(annotationContext)
     }
 
     private fun FunSpec.Builder.initializeRequestObject() {
-        addStatement("%T()", resolver.getClassDeclarationByName(okHttpRequestBuilderFqName)?.toClassName()!!)
+        addStatement(
+            "val request = %T()",
+            resolver.getClassDeclarationByName(okHttpRequestBuilderFqName)?.toClassName()!!
+        )
     }
 
     private fun FunSpec.Builder.dispatchOnHttpMethod(annotationContext: AnnotationContext) {
@@ -49,26 +69,18 @@ class ApiFuncResolver(
         }
     }
 
-    private val AnnotationContext.httpMethodStrRepresent: String
-        get() = httpMethodAnnotation.annotationDeclaration().simpleName.asString().lowercase()
+    private val AnnotationContext.httpMethodStrRepresent: String get() = httpMethodAnnotation.simpleName.lowercase()
 
 
     private fun extractHttpMethod(): KSAnnotation = decl.annotations
-        .toList().first { httpMethodQualifiedNameSet.contains(it.annotationDeclaration().qualifiedName?.asString()) }
+        .toList().first { httpMethodQualifiedNameSet.contains(it.qualifiedName) }
 
-    private val httpMethodQualifiedNameSet: Set<String> = listOf(
-        GET::class,
-        POST::class
-    ).mapNotNull { it.qualifiedName }.toSet()
-
-    private fun apiFunctionLevelAnnotations() = decl.annotations.toList()
-
-    @Suppress("unchecked_cast")
+    @Suppress(Constants.UNCHECKED_CAST)
     private fun assertAnnotatedWithHttpMethodImpl() {
         val annotations = apiFunctionLevelAnnotations()
             .flatMap { ksAnnotation ->
-                ksAnnotation.annotationDeclaration().annotations.filter {
-                    it.annotationDeclaration().qualifiedName?.asString() == qualifiedName<HttpMethod>()
+                ksAnnotation.annotations.filter {
+                    it.qualifiedName == HttpMethod::class.qualifiedName
                 }
             }.toList().ifEmpty {
                 logger.exception(ApiMemberFunctionMustAnnotatedWithHttpMethodAnnotation(api, decl))
@@ -78,7 +90,13 @@ class ApiFuncResolver(
         }
     }
 
-    private fun KSAnnotation.annotationDeclaration() = annotationType.resolve().declaration
 
-    private inline fun <reified Type> qualifiedName(): String? = Type::class.qualifiedName
+    private val httpMethodQualifiedNameSet: Set<String> = listOf(
+        GET::class,
+        POST::class
+    ).mapNotNull { it.qualifiedName }.toSet()
+
+    private fun apiFunctionLevelAnnotations() = decl.annotations.toList()
+
+    private val okHttpRequestBuilderFqName = "okhttp3.Request.Builder"
 }

@@ -4,46 +4,47 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
-import context.LlonvneSymbolProcessorContext
+import context.SymbolProcessorContext
+import context.scoped
 
-class LlonvneSymbolProcessor(private val environment: SymbolProcessorEnvironment) : SymbolProcessor {
-    private val logger = environment.logger
-    private val apisExtensionsFileResolver = ApisExtensionsFileResolver(environment)
+class LlonvneSymbolProcessor(private val env: SymbolProcessorEnvironment) : SymbolProcessor {
+    private val logger = env.logger
+    private val poetResolver = KotlinPoetResolver(env)
 
 
-    override fun process(resolver: Resolver): List<KSAnnotated> =
-        LlonvneSymbolProcessorContext.scope(resolver, apisExtensionsFileResolver, environment) {
+    override fun process(resolver: Resolver): List<KSAnnotated> {
+        SymbolProcessorContext(resolver, poetResolver, env, env.logger).scoped {
             resolver
                 .extractValidApiInterfaces()
                 .map { ApiResolver(it) }
                 .onEach(ApiResolver::resolve)
                 .toList()
-            emptyList()
         }
+        return emptyList()
+    }
 
     override fun finish() {
-        apisExtensionsFileResolver.generate()
+        poetResolver.generate()
     }
 
-    private fun Resolver.extractValidApiInterfaces(): Sequence<KSClassDeclaration> =
-        getSymbolsWithAnnotation<Api>().filterIsInterface()
+    private fun Resolver.extractValidApiInterfaces(): Sequence<KSClassDeclaration> {
 
-    @Suppress("unchecked_cast")
-    private fun Sequence<KSAnnotated>.filterIsInterface(): Sequence<KSClassDeclaration> {
-        return filter {
-            if (it is KSClassDeclaration && it.classKind == ClassKind.INTERFACE) {
-                true
-            } else {
-                processUnValidApiAnnotatedValue(it)
-                false
-            }
-        } as Sequence<KSClassDeclaration>
+        fun processUnValidApiAnnotatedValue(value: KSAnnotated) {
+            logger.exception(InvalidApiDeclarationException(value))
+        }
+
+        @Suppress(Constants.UNCHECKED_CAST)
+        fun Sequence<KSAnnotated>.filterInterface(): Sequence<KSClassDeclaration> {
+            return filter {
+                if (it is KSClassDeclaration && it.classKind == ClassKind.INTERFACE) {
+                    true
+                } else {
+                    processUnValidApiAnnotatedValue(it)
+                    false
+                }
+            } as Sequence<KSClassDeclaration>
+        }
+
+        return getSymbolsWithAnnotation<Api>().filterInterface()
     }
-
-    private fun processUnValidApiAnnotatedValue(value: KSAnnotated) {
-        logger.exception(InvalidApiDeclarationException(value))
-    }
-
-    private inline fun <reified T> Resolver.getSymbolsWithAnnotation() =
-        getSymbolsWithAnnotation(T::class.java.name)
 }
