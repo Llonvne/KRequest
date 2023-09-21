@@ -18,6 +18,7 @@ open class ApiFuncResolver(
         val httpMethodCtx = buildHttpCtx()
         val impl = FunSpec.builder(decl.simpleName.asString()) {
             func()
+            request(httpMethodCtx)
             call()
         }
         cls.addFunction(impl.build())
