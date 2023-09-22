@@ -1,6 +1,6 @@
 package utils
 
-import KSClassDeclarationNotFound
+import exception.KSClassDeclarationNotFound
 import PostBody
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.Resolver

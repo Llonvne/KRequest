@@ -4,7 +4,7 @@ import Api
 import Apis
 import Constants
 import GeneratedCode
-import NotAValidApiDecl
+import exception.NotAValidApiDecl
 import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration

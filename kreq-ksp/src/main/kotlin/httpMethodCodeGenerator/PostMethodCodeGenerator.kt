@@ -1,7 +1,7 @@
 package httpMethodCodeGenerator
 
-import PostBodyMoreThanOneException
-import PostBodyNeededException
+import exception.PostBodyMoreThanOneException
+import exception.PostBodyNeededException
 import com.google.devtools.ksp.symbol.KSValueParameter
 import com.squareup.kotlinpoet.FunSpec
 import context.HttpMethodBuildContext

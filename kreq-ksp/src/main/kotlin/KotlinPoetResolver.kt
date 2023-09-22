@@ -8,6 +8,7 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
 import context.ApiBuildContext
 import context.SymbolProcessorContext
+import exception.AlreadyRegisterFunctionInCacheException
 import utils.*
 import java.util.function.Supplier
 

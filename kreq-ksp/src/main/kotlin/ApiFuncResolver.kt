@@ -6,6 +6,9 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import context.ApiBuildContext
 import context.HttpMethodBuildContext
 import context.SymbolProcessorContext
+import exception.ApiMemberFunctionMustAnnotatedWithHttpMethod
+import exception.HttpMethodShouldBeUniqueOnOneMethod
+import exception.NotResponseTypeShouldBeNullable
 import httpMethodCodeGenerator.httpMethod
 import utils.*
 

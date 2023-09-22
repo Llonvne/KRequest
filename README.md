@@ -25,9 +25,9 @@ use this annotated variable as the request body.
 
 ## Usage
 
-Let's understand the usage of KRequest through an example. When we need to access a GitHub API with the
+Let's understand the usage of KRequest through an example. When we need to access a GitHub API with the following
 URL https://api.github.com/users/{login}, where {login} represents the username parameter, we use the HTTP GET method
-and the response body is converted to GitUser.
+and the response body is need to be converted to GitUser.
 
 ```kotlin
 data class GitUser(

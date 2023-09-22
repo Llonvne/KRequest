@@ -1,3 +1,5 @@
+package exception
+
 import com.google.devtools.ksp.symbol.*
 
 open class ApiException(msg: String) : Exception(msg)
@@ -16,8 +18,8 @@ class InvalidApiDeclarationException(value: KSAnnotated) : ApiException(
     "$value is not a valid API annotated target,API annotation only can apply on Interface".withLocation(value)
 )
 
-class InvalidApiAbstractFunctionDeclarationException(value: KSDeclaration) : ApiException(
-    "$value is not a abstract function declaration in Api annotated interface".withLocation(value)
+class NotFunctionDeclarationException(value: KSDeclaration) : ApiException(
+    "$value is not a function declaration in Api annotated interface".withLocation(value)
 )
 
 class AlreadyRegisterFunctionInCacheException(api: KSClassDeclaration) : ApisInternalException(
@@ -62,4 +64,8 @@ class ReturnTypeIsNull(val func: KSFunctionDeclaration) : ApisInternalException(
 
 class NotResponseTypeShouldBeNullable(decl: KSFunctionDeclaration) : ApiException(
     "api should nullable type if return type is not OkHttp Response".withLocation(decl)
+)
+
+class NotAbstractFunctionDeclarationException(value: KSFunctionDeclaration) : ApiException(
+    "$value is not a abstract function,consider make it abstract or use extension function"
 )
