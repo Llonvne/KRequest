@@ -20,12 +20,12 @@ class ApiResolver(private val api: KSClassDeclaration) {
     }
 
     @Suppress(Constants.UNCHECKED_CAST)
-    private fun KSClassDeclaration.filterAbstractFunction() = declarations.filterDecision { decl ->
+    private fun KSClassDeclaration.filterAbstractFunction() = declarations.toList().filterDecision { decl ->
         rejectIfNotKSFunctionDecl(decl)
         acceptIf { decl.isAbstract }
         acceptIf { annotatedWithIgnored(decl) }
         reject { notAbstractFunctionDeclaration(decl) }
-    } as Sequence<KSFunctionDeclaration>
+    } as List<KSFunctionDeclaration>
 
     @OptIn(ExperimentalContracts::class)
     private fun Decision.rejectIfNotKSFunctionDecl(decl: KSDeclaration) {

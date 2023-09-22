@@ -21,7 +21,7 @@ interface Decision {
     fun acceptIf(predicate: OnAcceptDsl.() -> Boolean) {
         val acceptDsl = OnAcceptDsl()
         if (predicate(acceptDsl)) {
-            reject {
+            accept {
                 acceptDsl.acception?.invoke()
             }
         } else { /* do Nothing*/
@@ -171,5 +171,5 @@ fun makeDecision(making: Decision.() -> Nothing): Boolean =
     DecisionDslImpl(onAccept = { true }, onReject = { false }, making
     ).result()
 
-fun <T> Sequence<T>.filterDecision(making: Decision.(T) -> Nothing): Sequence<T> =
+fun <T> List<T>.filterDecision(making: Decision.(T) -> Nothing): List<T> =
     filter { makeDecision { making(it) } }

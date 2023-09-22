@@ -20,7 +20,6 @@ open class KRequestProcessor(private val env: SymbolProcessorEnvironment) : Symb
         resolver
             .extractApiInterface()
             .map { ApiResolver(it).resolve() }
-            .toList()
         emptyList()
     }
 
@@ -33,11 +32,11 @@ open class KRequestProcessor(private val env: SymbolProcessorEnvironment) : Symb
 
     context(SymbolProcessorContext)
     @Suppress(Constants.UNCHECKED_CAST)
-    private fun Resolver.extractApiInterface() = getSymbolsWithAnnotation<Api>()
+    private fun Resolver.extractApiInterface() = getSymbolsWithAnnotation<Api>().toList()
         .filterDecision { annotated ->
             acceptIf { annotated is KSClassDeclaration && annotated.isInterface }
             reject { processUnValidApiAnnotatedValue(annotated) }
-        } as Sequence<KSClassDeclaration>
+        } as List<KSClassDeclaration>
 
     /**
      * 该方法在 [process] 内部用于创建 [SymbolProcessorContext]

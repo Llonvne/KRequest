@@ -117,7 +117,7 @@ open class ApiFuncResolver(
         val annotations = decl.annotations.filter { anno -> anno.hasHttpMethodAnnotation() }.toList()
         when (annotations.size) {
             0 -> logger.exception(ApiMemberFunctionMustAnnotatedWithHttpMethod(api, decl))
-            2 -> {}
+            1 -> {}
             else -> logger.exception(HttpMethodShouldBeUniqueOnOneMethod(annotations, decl))
         }
     }
