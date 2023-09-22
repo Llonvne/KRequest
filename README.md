@@ -11,6 +11,10 @@ In fact, KRequest is still under **Development**, and the following are the avai
 ![Static Badge](https://img.shields.io/badge/KRequest-API-blue) The API annotation indicates that the annotated
 interface is a network request interface, which needs to be implemented by KRequest.
 
+![Static Badge](https://img.shields.io/badge/KRequest-Ignored-blue) The Ignored annotation indicates KRequest will
+ignore to implement this function if you want to give an implementation in an interface declaration. Try to use kotlin
+extension function when you consider to use this annotation
+
 ![Static Badge](https://img.shields.io/badge/HTTP_Method-GET-Green) The GET annotation indicates KRequest use HTTP GET
 request, with the parameter uri.
 
