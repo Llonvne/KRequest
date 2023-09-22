@@ -1,14 +1,31 @@
 package utils
 
+data class OnRejectDsl(var rejection: (() -> Unit)? = null) {
+    fun onReject(block: () -> Unit) {
+        rejection = block
+    }
+}
+
+data class OnAcceptDsl(var acception: (() -> Unit)? = null) {
+    fun onAccept(block: () -> Unit) {
+        acception = block
+    }
+}
+
 interface Decision {
     /**
      * 如果 [predicate] 为真作出 Accept 决策
      * 否则不做任何事
      */
     @DecisionDsl
-    fun acceptIf(predicate: () -> Boolean) = if (predicate()) {
-        accept()
-    } else { /* do Nothing*/
+    fun acceptIf(predicate: OnAcceptDsl.() -> Boolean) {
+        val acceptDsl = OnAcceptDsl()
+        if (predicate(acceptDsl)) {
+            reject {
+                acceptDsl.acception?.invoke()
+            }
+        } else { /* do Nothing*/
+        }
     }
 
     /**
@@ -16,9 +33,14 @@ interface Decision {
      * 否则不做任何事
      */
     @DecisionDsl
-    fun rejectIf(predicate: () -> Boolean) = if (predicate()) {
-        reject()
-    } else { /* do Nothing*/
+    fun rejectIf(predicate: OnRejectDsl.() -> Boolean) {
+        val rejectDsl = OnRejectDsl()
+        if (predicate(rejectDsl)) {
+            reject {
+                rejectDsl.rejection?.invoke()
+            }
+        } else { /* do Nothing*/
+        }
     }
 
     /**
@@ -26,10 +48,14 @@ interface Decision {
      * 否则作出 Reject 决策
      */
     @DecisionDsl
-    fun decideOn(predicate: () -> Boolean): Nothing = if (predicate()) {
-        accept()
-    } else {
-        reject()
+    fun decideOn(predicate: context(OnAcceptDsl, OnRejectDsl) () -> Boolean): Nothing {
+        val onAc = OnAcceptDsl()
+        val onRe = OnRejectDsl()
+        if (predicate(onAc, onRe)) {
+            accept { onAc.acception?.invoke() }
+        } else {
+            reject { onRe.rejection?.invoke() }
+        }
     }
 
     /**

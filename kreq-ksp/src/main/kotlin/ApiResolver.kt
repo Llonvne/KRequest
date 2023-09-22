@@ -3,7 +3,6 @@ import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import exception.ApiAnnotatedInterfaceNotSupportTypeParameter
 import exception.notAbstractFunctionDeclaration
-import exception.notKSFunctionDeclaration
 import utils.Decision
 import utils.filterDecision
 import utils.filterType
@@ -39,8 +38,9 @@ class ApiResolver(private val api: KSClassDeclaration) {
         contract {
             returns() implies (decl is KSFunctionDeclaration)
         }
-        if (decl !is KSFunctionDeclaration) {
-            reject { notKSFunctionDeclaration(decl) }
+        rejectIf {
+            onReject { exception.notKSFunctionDeclaration(decl) }
+            decl !is KSFunctionDeclaration
         }
     }
 

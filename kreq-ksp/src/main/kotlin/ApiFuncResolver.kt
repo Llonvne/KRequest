@@ -98,11 +98,12 @@ open class ApiFuncResolver(
     private val okHttpRequestBuilderDecl
         get() = resolver.getClassDeclarationByNameOrException(okHttpRequestBuilderFqName)
 
-    private fun buildHttpCtx(): HttpMethodBuildContext {
-        fun extractHttpMethod(): KSAnnotation =
-            decl.annotations.toList().first { httpMethodQualifiedNameSet.contains(it.qualifiedName) }
-        return HttpMethodBuildContext(decl, decl.annotations.toList(), extractHttpMethod(), decl.parameters)
-    }
+    private fun extractHttpMethod() =
+        decl.annotations.toList().first { httpMethodQualifiedNameSet.contains(it.qualifiedName) }
+
+    private fun buildHttpCtx(): HttpMethodBuildContext =
+        HttpMethodBuildContext(decl, decl.annotations.toList(), extractHttpMethod(), decl.parameters)
+
 
     context (SymbolProcessorContext, ApiBuildContext, FunSpec.Builder)
     private fun FunSpec.Builder.buildRequest(httpCtx: HttpMethodBuildContext) = apply {
