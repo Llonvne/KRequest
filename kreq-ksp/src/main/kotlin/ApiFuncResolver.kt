@@ -1,4 +1,5 @@
-import com.google.devtools.ksp.symbol.KSAnnotation
+import Constants.requestVar
+import Constants.respVar
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.squareup.kotlinpoet.FunSpec
@@ -6,9 +7,7 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import context.ApiBuildContext
 import context.HttpMethodBuildContext
 import context.SymbolProcessorContext
-import exception.ApiMemberFunctionMustAnnotatedWithHttpMethod
-import exception.HttpMethodShouldBeUniqueOnOneMethod
-import exception.NotResponseTypeShouldBeNullable
+import context.buildHttpCtx
 import httpMethodCodeGenerator.httpMethod
 import utils.*
 
@@ -17,12 +16,12 @@ open class ApiFuncResolver(
     private val api: KSClassDeclaration, private val decl: KSFunctionDeclaration
 ) {
     fun resolve() {
-        assertAnnotatedWithHttpMethodImpl()
-        val httpMethodCtx = buildHttpCtx()
-        val impl = FunSpec.builder(decl.simpleName.asString()) {
-            func()
-            request(httpMethodCtx)
-            call()
+        decl.assertAnnotatedWithHttpMethodImpl(api)
+        val httpMethodCtx = buildHttpCtx(decl)
+        val impl = buildFun(decl.simpleName.asString()) {
+            buildApiFunc()
+            buildRequest(httpMethodCtx)
+            buildCall()
         }
         cls.addFunction(impl.build())
     }
@@ -30,7 +29,7 @@ open class ApiFuncResolver(
     /**
      * 该函数控制 ApiFunc 修饰符等信息，重写该函数以改变此默认行为
      */
-    protected open fun FunSpec.Builder.func() {
+    protected open fun FunBuilder.buildApiFunc() {
         if (decl.isSuspend()) {
             setSuspend()
         }
@@ -39,43 +38,41 @@ open class ApiFuncResolver(
         importParameters(decl)
     }
 
-    private fun FunSpec.Builder.buildFuncReturn() {
-        if (returnResponse) {
+    private fun FunBuilder.buildFuncReturn() {
+        if (decl.returnTypeIsResponse) {
             returnSame(decl)
         } else {
-            if (!decl.returnType?.resolve()?.isMarkedNullable!!) {
-                throw NotResponseTypeShouldBeNullable(decl)
-            }
+            decl.assertCustomizeReturnTypeShouldBeNullable()
             returnSame(decl, true)
         }
     }
 
+
     /**
      * 该函数控制 request 的建立和执行，重写该函数以改变此默认行为
      */
-    protected open fun FunSpec.Builder.request(httpMethodCtx: HttpMethodBuildContext) {
-        buildRequest(httpMethodCtx)
+    protected open fun FunBuilder.buildRequest(httpCtx: HttpMethodBuildContext) {
+        buildRequest(httpCtx)
         finishRequestBuild()
     }
 
     /**
      * 该函数控制 Call 的建立和执行，重写该函数以改变此默认行为
      */
-    protected open fun FunSpec.Builder.call() {
+    protected open fun FunBuilder.buildCall() {
         buildNewCall(respVar, requestVar)
         executeCall()
         buildResponse()
     }
 
-    private fun FunSpec.Builder.buildResponse() {
+    private fun FunBuilder.buildResponse() {
         handleSuspend {
-            if (returnResponse) {
+            if (decl.returnTypeIsResponse) {
                 buildReturnStatement(respVar, withReturnKeyword = it)
             } else {
                 buildReturnStatement("converter($respVar)", withReturnKeyword = it)
             }
         }
-
     }
 
     private fun FunSpec.Builder.handleSuspend(block: FunSpec.Builder.(needReturnKeyWord: Boolean) -> Unit) {
@@ -89,42 +86,9 @@ open class ApiFuncResolver(
         }
     }
 
-    private val returnResponse get() = decl.isReturnTypeQualifiedNameEquals(okHttpResponseFqName)
-
-    private val respVar = "resp"
-    private val requestVar = "request"
-    private val okHttpRequestBuilderFqName = "okhttp3.Request.Builder"
-    private val okHttpResponseFqName = "okhttp3.Response"
-    private val okHttpRequestBuilderDecl
-        get() = resolver.getClassDeclarationByNameOrException(okHttpRequestBuilderFqName)
-
-    private fun extractHttpMethod() =
-        decl.annotations.toList().first { httpMethodQualifiedNameSet.contains(it.qualifiedName) }
-
-    private fun buildHttpCtx(): HttpMethodBuildContext =
-        HttpMethodBuildContext(decl, decl.annotations.toList(), extractHttpMethod(), decl.parameters)
-
-
     context (SymbolProcessorContext, ApiBuildContext, FunSpec.Builder)
     private fun FunSpec.Builder.buildRequest(httpCtx: HttpMethodBuildContext) = apply {
         addCreateNewInstanceStatement(requestVar, okHttpRequestBuilderDecl.toClassName())
         httpCtx.httpMethod.methodGenerator(httpCtx).resolve()
     }
-
-
-    @Suppress(Constants.UNCHECKED_CAST)
-    private fun assertAnnotatedWithHttpMethodImpl() {
-        val annotations = decl.annotations.filter { anno -> anno.hasHttpMethodAnnotation() }.toList()
-        when (annotations.size) {
-            0 -> logger.exception(ApiMemberFunctionMustAnnotatedWithHttpMethod(api, decl))
-            1 -> {}
-            else -> logger.exception(HttpMethodShouldBeUniqueOnOneMethod(annotations, decl))
-        }
-    }
-
-    private fun KSAnnotation.hasHttpMethodAnnotation() = annotations.filterType<HttpMethod>().toList().isNotEmpty()
-
-    private val httpMethodQualifiedNameSet: Set<String> = listOf(
-        GET::class, POST::class, DELETE::class
-    ).mapNotNull { it.qualifiedName }.toSet()
 }

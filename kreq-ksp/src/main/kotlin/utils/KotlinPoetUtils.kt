@@ -4,7 +4,6 @@ import Api
 import Apis
 import Constants
 import GeneratedCode
-import exception.NotAValidApiDecl
 import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
@@ -12,6 +11,7 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import context.SymbolProcessorContext
+import exception.NotAValidApiDecl
 
 /**
  * 将 [FunSpec.Builder] 简称为 [FunSpec]
@@ -21,6 +21,8 @@ typealias FunBuilder = FunSpec.Builder
  * 将 [TypeSpec.Builder] 简称为 [TypeBuilder]
  */
 typealias TypeBuilder = TypeSpec.Builder
+
+fun buildFun(name: String, configuration: FunSpec.Builder.() -> Unit) = FunSpec.builder(name, configuration)
 
 /**
  * 在生成的函数中抛出 [NotImplementedError] 异常

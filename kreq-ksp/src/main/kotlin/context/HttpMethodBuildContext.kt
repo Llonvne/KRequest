@@ -4,6 +4,7 @@ import Constants
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSValueParameter
+import utils.extractHttpMethod
 import utils.uri
 import utils.useVar
 
@@ -24,3 +25,6 @@ data class HttpMethodBuildContext(
 }
 
 val HttpMethodBuildContext.buildUrl get() = useVar(Constants.BASE_URL_VAR) + httpMethodAnnotation.arguments.uri
+
+fun buildHttpCtx(decl: KSFunctionDeclaration): HttpMethodBuildContext =
+    HttpMethodBuildContext(decl, decl.annotations.toList(), extractHttpMethod(decl), decl.parameters)
