@@ -28,3 +28,6 @@ annotation class PostBody
 
 @Target(AnnotationTarget.CLASS)
 annotation class GeneratedCode(val value: String)
+
+@Target(AnnotationTarget.FUNCTION)
+annotation class DELETE(val value: String)

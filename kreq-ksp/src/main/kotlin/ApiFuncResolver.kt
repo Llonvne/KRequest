@@ -119,6 +119,6 @@ open class ApiFuncResolver(
     }
 
     private val httpMethodQualifiedNameSet: Set<String> = listOf(
-        GET::class, POST::class
+        GET::class, POST::class, DELETE::class
     ).mapNotNull { it.qualifiedName }.toSet()
 }
