@@ -2,16 +2,47 @@ package utils
 
 interface Decision {
     /**
+     * 如果 [predicate] 为真作出 Accept 决策
+     * 否则不做任何事
+     */
+    @DecisionDsl
+    fun acceptIf(predicate: () -> Boolean) = if (predicate()) {
+        accept()
+    } else { /* do Nothing*/
+    }
+
+    /**
+     * 如果 [predicate] 为真作出 Reject 决策
+     * 否则不做任何事
+     */
+    @DecisionDsl
+    fun rejectIf(predicate: () -> Boolean) = if (predicate()) {
+        reject()
+    } else { /* do Nothing*/
+    }
+
+    /**
+     * 如果 [predicate] 为真作出 Accept 决策
+     * 否则作出 Reject 决策
+     */
+    @DecisionDsl
+    fun decideOn(predicate: () -> Boolean): Nothing = if (predicate()) {
+        accept()
+    } else {
+        reject()
+    }
+
+    /**
      * 该方法将立刻结束决策，并立刻作出 Accept
      */
     @DecisionDsl
-    fun accept(block: () -> Unit = {}): Nothing
+    fun accept(next: () -> Unit = {}): Nothing
 
     /**
      * 该方法将立刻结束决策，并立刻作出 Reject
      */
     @DecisionDsl
-    fun reject(block: () -> Unit = {}): Nothing
+    fun reject(next: () -> Unit = {}): Nothing
 
     /**
      * 该方法将待决策值设置为 Accept
@@ -32,46 +63,49 @@ interface Decision {
     fun decide(): Nothing
 }
 
-@DslMarker
-annotation class DecisionDsl
-
 class DecisionUnmake : Exception()
 
-enum class DecisionEnum {
-    Accept, Reject, Undefined
-}
+@DslMarker
+private annotation class DecisionDsl
 
 private class DecisionDslImpl<R : Any>(
     private val onAccept: () -> R, private val onReject: () -> R, private val making: Decision.() -> Nothing
 ) : Decision {
+    private enum class DecisionEnum {
+        Accept, Reject, Undefined
+    }
+
     private class DecisionMade : Exception()
 
     private fun finish(): Nothing = throw DecisionMade()
 
     private var status: DecisionEnum = DecisionEnum.Undefined
 
+    @DecisionDsl
     override fun setAccept() {
         status = DecisionEnum.Accept
     }
 
+    @DecisionDsl
     override fun setReject() {
         status = DecisionEnum.Reject
     }
 
     @DecisionDsl
-    override fun accept(block: () -> Unit): Nothing {
+    override fun accept(next: () -> Unit): Nothing {
         status = DecisionEnum.Accept
-        block()
+        next()
         finish()
     }
 
     @DecisionDsl
-    override fun reject(block: () -> Unit): Nothing {
+    override fun reject(next: () -> Unit): Nothing {
         status = DecisionEnum.Reject
-        block()
+        next()
         finish()
     }
 
+    @DecisionDsl
     override fun decide(): Nothing = finish()
 
     @Suppress("UNREACHABLE_CODE")
@@ -111,6 +145,5 @@ fun makeDecision(making: Decision.() -> Nothing): Boolean =
     DecisionDslImpl(onAccept = { true }, onReject = { false }, making
     ).result()
 
-fun <T> Sequence<T>.filterDecision(making: Decision.(T) -> Nothing): Sequence<T> = filter {
-    makeDecision { making(it) }
-}
+fun <T> Sequence<T>.filterDecision(making: Decision.(T) -> Nothing): Sequence<T> =
+    filter { makeDecision { making(it) } }

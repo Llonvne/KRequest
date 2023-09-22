@@ -5,6 +5,7 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import context.SymbolProcessorContext
 import exception.InvalidApiDeclarationException
+import utils.filterDecision
 import utils.getSymbolsWithAnnotation
 import utils.isInterface
 
@@ -40,13 +41,9 @@ open class KRequestProcessor(private val env: SymbolProcessorEnvironment) : Symb
 
     context(SymbolProcessorContext)
     @Suppress(Constants.UNCHECKED_CAST)
-    private fun Sequence<KSAnnotated>.filterInterface() = filter { annotated ->
-        if (annotated is KSClassDeclaration && annotated.isInterface) {
-            true
-        } else {
-            processUnValidApiAnnotatedValue(annotated)
-            false
-        }
+    private fun Sequence<KSAnnotated>.filterInterface() = filterDecision { annotated ->
+        acceptIf { annotated is KSClassDeclaration && annotated.isInterface }
+        reject { processUnValidApiAnnotatedValue(annotated) }
     } as Sequence<KSClassDeclaration>
 
 

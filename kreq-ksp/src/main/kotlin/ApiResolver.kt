@@ -29,8 +29,8 @@ class ApiResolver(private val api: KSClassDeclaration) {
     @Suppress(Constants.UNCHECKED_CAST)
     private fun Sequence<KSDeclaration>.filterAbstractFunction() = filterDecision { decl ->
         rejectIfNotKSFunctionDecl(decl)
-        acceptIfAbstract(decl)
-        acceptedAnnotatedWithIgnore(decl)
+        acceptIf { decl.isAbstract }
+        acceptIf { annotatedWithIgnored(decl) }
         reject { notAbstractFunctionDeclaration(decl) }
     } as Sequence<KSFunctionDeclaration>
 
@@ -41,18 +41,6 @@ class ApiResolver(private val api: KSClassDeclaration) {
         }
         if (decl !is KSFunctionDeclaration) {
             reject { notKSFunctionDeclaration(decl) }
-        }
-    }
-
-    private fun Decision.acceptIfAbstract(decl: KSFunctionDeclaration) {
-        if (decl.isAbstract) {
-            accept()
-        }
-    }
-
-    private fun Decision.acceptedAnnotatedWithIgnore(decl: KSFunctionDeclaration) {
-        if (annotatedWithIgnored(decl)) {
-            reject()
         }
     }
 
