@@ -2,9 +2,9 @@
 
 ## Introduction
 
-![Static Badge](https://img.shields.io/badge/status-Development-8A2BE2)
-
 KRequest is a **Declarative** HTTP client/Kotlin Symbol Processor using KSP and OkHttp3
+
+## Status  ![Static Badge](https://img.shields.io/badge/status-Development-8A2BE2)
 
 In fact, KRequest is still under **Development**, and the following are the available annotations.
 
