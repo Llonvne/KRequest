@@ -14,7 +14,7 @@ inline fun <reified Type> create(baseUrl: String, okHttpClient: OkHttpClient): T
 @Api
 interface GitHubApi {
     @GET("/users/{login}")
-    fun getUserAsync(@Path("login") login: String): GitUser?
+    suspend fun getUserAsync(@Path("login") login: String): GitUser?
 
     @GET("/users/{login}")
     fun getUser(@Path("login") login: String): GitUser?

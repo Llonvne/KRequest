@@ -23,3 +23,5 @@ fun KSTypeReference?.isTypeQualifiedNameEquals(qualifiedName: String) =
 
 fun KSFunctionDeclaration.isReturnTypeQualifiedNameEquals(qualifiedName: String) =
     returnType?.isTypeQualifiedNameEquals(qualifiedName) ?: false
+
+fun KSFunctionDeclaration.isSuspend(): Boolean = modifiers.contains(Modifier.SUSPEND)

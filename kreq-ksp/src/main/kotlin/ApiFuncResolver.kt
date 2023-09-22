@@ -13,8 +13,6 @@ context (SymbolProcessorContext, ApiBuildContext)
 open class ApiFuncResolver(
     private val api: KSClassDeclaration, private val decl: KSFunctionDeclaration
 ) {
-    private val userDefinedResponseTypeResolver = UserDefinedResponseTypeResolver()
-
     fun resolve() {
         assertAnnotatedWithHttpMethodImpl()
         val httpMethodCtx = buildHttpCtx()
@@ -30,6 +28,15 @@ open class ApiFuncResolver(
      * 该函数控制 ApiFunc 修饰符等信息，重写该函数以改变此默认行为
      */
     protected open fun FunSpec.Builder.func() {
+        if (decl.isSuspend()) {
+            setSuspend()
+        }
+        buildFuncReturn()
+        setOverride()
+        importParameters(decl)
+    }
+
+    private fun FunSpec.Builder.buildFuncReturn() {
         if (returnResponse) {
             returnSame(decl)
         } else {
@@ -38,8 +45,6 @@ open class ApiFuncResolver(
             }
             returnSame(decl, true)
         }
-        setOverride()
-        importParameters(decl)
     }
 
     /**
@@ -59,12 +64,25 @@ open class ApiFuncResolver(
         buildResponse()
     }
 
-    private fun FunSpec.Builder.buildResponse() = apply {
-        if (returnResponse) {
-            buildReturnStatement(respVar)
-        } else {
-//            val retType = decl.returnType ?: throw ReturnTypeIsNull(decl)
-            buildReturnStatement("converter($respVar)")
+    private fun FunSpec.Builder.buildResponse() {
+        handleSuspend {
+            if (returnResponse) {
+                buildReturnStatement(respVar, withReturnKeyword = it)
+            } else {
+                buildReturnStatement("converter($respVar)", withReturnKeyword = it)
+            }
+        }
+
+    }
+
+    private fun FunSpec.Builder.handleSuspend(block: FunSpec.Builder.(needReturnKeyWord: Boolean) -> Unit) {
+        val isSuspend = decl.isSuspend()
+        if (isSuspend) {
+            addStatement("return suspended{")
+        }
+        block(!isSuspend)
+        if (isSuspend) {
+            addStatement("}")
         }
     }
 
