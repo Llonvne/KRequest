@@ -114,13 +114,15 @@ open class ApiFuncResolver(
 
     @Suppress(Constants.UNCHECKED_CAST)
     private fun assertAnnotatedWithHttpMethodImpl() {
-        val annotations = decl.annotations.flatMap { anno -> anno.annotations.filterType<HttpMethod>() }.toList()
-            .ifEmpty { logger.exception(ApiMemberFunctionMustAnnotatedWithHttpMethod(api, decl)) } as List<KSAnnotation>
-
-        if (annotations.size > 1) {
-            throw HttpMethodShouldBeUniqueOnOneMethod(annotations, decl)
+        val annotations = decl.annotations.filter { anno -> anno.hasHttpMethodAnnotation() }.toList()
+        when (annotations.size) {
+            0 -> logger.exception(ApiMemberFunctionMustAnnotatedWithHttpMethod(api, decl))
+            2 -> {}
+            else -> logger.exception(HttpMethodShouldBeUniqueOnOneMethod(annotations, decl))
         }
     }
+
+    private fun KSAnnotation.hasHttpMethodAnnotation() = annotations.filterType<HttpMethod>().toList().isNotEmpty()
 
     private val httpMethodQualifiedNameSet: Set<String> = listOf(
         GET::class, POST::class, DELETE::class

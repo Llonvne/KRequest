@@ -12,21 +12,15 @@ import kotlin.contracts.contract
 context (context.SymbolProcessorContext)
 class ApiResolver(private val api: KSClassDeclaration) {
     fun resolve() {
-        fun assertApiClassWithoutTypeParameter() {
-            if (api.typeParameters.isNotEmpty()) {
-                logger.exception(ApiAnnotatedInterfaceNotSupportTypeParameter(api))
-            }
-        }
         assertApiClassWithoutTypeParameter()
-        fileResolver.registerApi(api) {
-            api.declarations.filterAbstractFunction().map { func -> ApiFuncResolver(api, func) }
-                .forEach(ApiFuncResolver::resolve)
+        poetResolver.registerApi(api) {
+            api.filterAbstractFunction()
+                .forEach { func -> ApiFuncResolver(api, func).resolve() }
         }
     }
 
-
     @Suppress(Constants.UNCHECKED_CAST)
-    private fun Sequence<KSDeclaration>.filterAbstractFunction() = filterDecision { decl ->
+    private fun KSClassDeclaration.filterAbstractFunction() = declarations.filterDecision { decl ->
         rejectIfNotKSFunctionDecl(decl)
         acceptIf { decl.isAbstract }
         acceptIf { annotatedWithIgnored(decl) }
@@ -46,6 +40,12 @@ class ApiResolver(private val api: KSClassDeclaration) {
 
     private fun annotatedWithIgnored(decl: KSFunctionDeclaration) =
         decl.annotations.filterType<Ignored>().toList().isNotEmpty()
+
+    private fun assertApiClassWithoutTypeParameter() {
+        if (api.typeParameters.isNotEmpty()) {
+            logger.exception(ApiAnnotatedInterfaceNotSupportTypeParameter(api))
+        }
+    }
 }
 
 

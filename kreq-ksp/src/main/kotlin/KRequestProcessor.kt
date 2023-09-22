@@ -13,21 +13,13 @@ open class KRequestProcessor(private val env: SymbolProcessorEnvironment) : Symb
     private val poetResolver = KotlinPoetResolver(env)
 
     /**
-     * 该方法在 [process] 内部用于创建 [SymbolProcessorContext]
-     * 由于 [logger],[env],[postResolver]不变，每次只需要一个[resolver] 即可创建新的环境
-     */
-    private fun createProcessorContext(resolver: Resolver, block: SymbolProcessorContext.() -> List<KSAnnotated>) =
-        SymbolProcessorContext(resolver, poetResolver, env, env.logger).block()
-
-    /**
      * 该方法创建新的[SymbolProcessorContext]环境，并使用[extractValidApiInterfaces]提取有效的Api接口，
      * 建立[ApiResolver]调用[ApiResolver.resolve] 方法处理
      */
-    override fun process(resolver: Resolver) = createProcessorContext(resolver) {
-        resolver.getSymbolsWithAnnotation<Api>()
-            .filterInterface()
-            .map { ApiResolver(it) }
-            .onEach(ApiResolver::resolve)
+    override fun process(resolver: Resolver) = processorCtx(resolver) {
+        resolver
+            .extractApiInterface()
+            .map { ApiResolver(it).resolve() }
             .toList()
         emptyList()
     }
@@ -41,11 +33,18 @@ open class KRequestProcessor(private val env: SymbolProcessorEnvironment) : Symb
 
     context(SymbolProcessorContext)
     @Suppress(Constants.UNCHECKED_CAST)
-    private fun Sequence<KSAnnotated>.filterInterface() = filterDecision { annotated ->
-        acceptIf { annotated is KSClassDeclaration && annotated.isInterface }
-        reject { processUnValidApiAnnotatedValue(annotated) }
-    } as Sequence<KSClassDeclaration>
+    private fun Resolver.extractApiInterface() = getSymbolsWithAnnotation<Api>()
+        .filterDecision { annotated ->
+            acceptIf { annotated is KSClassDeclaration && annotated.isInterface }
+            reject { processUnValidApiAnnotatedValue(annotated) }
+        } as Sequence<KSClassDeclaration>
 
+    /**
+     * 该方法在 [process] 内部用于创建 [SymbolProcessorContext]
+     * 由于 [logger],[env],[postResolver]不变，每次只需要一个[resolver] 即可创建新的环境
+     */
+    private fun processorCtx(resolver: Resolver, block: SymbolProcessorContext.() -> List<KSAnnotated>) =
+        SymbolProcessorContext(resolver, poetResolver, env, env.logger).block()
 
     /**
      * 重写该方法允许你重写当遇到非标准元素的行为

@@ -10,7 +10,6 @@ class GetMethodCodeGenerator(
     private val urlResolver: DefaultUrlResolver = DefaultUrlResolver()
 ) : HttpMethodCodeGenerator {
 
-
     context (SymbolProcessorContext, context.ApiBuildContext, Builder)
     override fun resolve() {
         getMethod()
