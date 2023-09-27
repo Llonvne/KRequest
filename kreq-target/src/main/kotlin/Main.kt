@@ -1,6 +1,6 @@
 import okhttp3.OkHttpClient
 
-fun main() {
+suspend fun main() {
     val githubApi = createAPI<GitHubApi>("https://api.github.com", OkHttpClient())
     val user = githubApi.getUser("llonvne")
 }
@@ -8,7 +8,7 @@ fun main() {
 @Api
 interface GitHubApi {
     @GET("/users/{login}")
-    fun getUser(@Path("login") login: String): GitUser?
+    suspend fun getUser(@Path("login") login: String): GitUser?
 }
 
 data class GitUser(

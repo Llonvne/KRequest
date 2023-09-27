@@ -19,5 +19,4 @@ class DefaultUrlResolver : UrlResolver {
         val pattern = """\{(.*?)\}""".toRegex()
         return pattern.findAll(input).toList().map { it.groupValues[1] }
     }
-
 }

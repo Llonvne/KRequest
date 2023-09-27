@@ -2,8 +2,8 @@ object Constants {
     const val BASE_URL_VAR = "baseUrl"
     const val OK_HTTP_CLIENT_VAR = "okHttpClient"
     const val UNCHECKED_CAST = "unchecked_cast"
-    val respVar = "resp"
-    val requestVar = "request"
-    val okHttpRequestBuilderFqName = "okhttp3.Request.Builder"
-    val okHttpResponseFqName = "okhttp3.Response"
+    const val RESP_VAR = "resp"
+    const val REQUEST_VAR = "request"
+    const val OK_HTTP_REQUEST_BUILDER_FQ_NAME = "okhttp3.Request.Builder"
+    const val OK_HTTP_RESPONSE_FQ_NAME = "okhttp3.Response"
 }

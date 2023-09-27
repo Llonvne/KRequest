@@ -1,5 +1,5 @@
-import Constants.requestVar
-import Constants.respVar
+import Constants.REQUEST_VAR
+import Constants.RESP_VAR
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.squareup.kotlinpoet.FunSpec
@@ -20,7 +20,7 @@ open class ApiFuncResolver(
         val httpMethodCtx = buildHttpCtx(decl)
         val impl = buildFun(decl.simpleName.asString()) {
             buildApiFunc()
-            buildRequest(httpMethodCtx)
+            requestInvokeBuild(httpMethodCtx)
             buildCall()
         }
         cls.addFunction(impl.build())
@@ -51,7 +51,7 @@ open class ApiFuncResolver(
     /**
      * 该函数控制 request 的建立和执行，重写该函数以改变此默认行为
      */
-    protected open fun FunBuilder.buildRequest(httpCtx: HttpMethodBuildContext) {
+    protected open fun FunBuilder.requestInvokeBuild(httpCtx: HttpMethodBuildContext) {
         buildRequest(httpCtx)
         finishRequestBuild()
     }
@@ -60,7 +60,7 @@ open class ApiFuncResolver(
      * 该函数控制 Call 的建立和执行，重写该函数以改变此默认行为
      */
     protected open fun FunBuilder.buildCall() {
-        buildNewCall(respVar, requestVar)
+        buildNewCall(RESP_VAR, REQUEST_VAR)
         executeCall()
         buildResponse()
     }
@@ -68,9 +68,9 @@ open class ApiFuncResolver(
     private fun FunBuilder.buildResponse() {
         handleSuspend {
             if (decl.returnTypeIsResponse) {
-                buildReturnStatement(respVar, withReturnKeyword = it)
+                buildReturnStatement(RESP_VAR, withReturnKeyword = it)
             } else {
-                buildReturnStatement("converter($respVar)", withReturnKeyword = it)
+                buildReturnStatement("converter($RESP_VAR)", withReturnKeyword = it)
             }
         }
     }
@@ -88,7 +88,7 @@ open class ApiFuncResolver(
 
     context (SymbolProcessorContext, ApiBuildContext, FunSpec.Builder)
     private fun FunSpec.Builder.buildRequest(httpCtx: HttpMethodBuildContext) = apply {
-        addCreateNewInstanceStatement(requestVar, okHttpRequestBuilderDecl.toClassName())
+        addCreateNewInstanceStatement(REQUEST_VAR, okHttpRequestBuilderDecl.toClassName())
         httpCtx.httpMethod.methodGenerator(httpCtx).resolve()
     }
 }

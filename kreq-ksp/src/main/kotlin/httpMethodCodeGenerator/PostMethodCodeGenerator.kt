@@ -27,7 +27,7 @@ open class PostMethodCodeGenerator(
     context (SymbolProcessorContext, HttpMethodBuildContext)
     private fun resolvePostBodyVarName(): String {
         val matchedParameters = httpCtx.parameters
-            .filter { it.hasPostBodyAnnotation() && it.typeIsRequestBody(resolver) }
+            .filter { it.hasPostBodyAnnotation() && it.typeIsRequestBody() }
         return when (matchedParameters.size) {
             1 -> matchedParameters[0].name?.getShortName()!!
             else -> invalidPostBody(matchedParameters)

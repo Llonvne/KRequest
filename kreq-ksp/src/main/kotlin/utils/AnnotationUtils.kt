@@ -15,14 +15,16 @@ inline fun <reified T> Resolver.getSymbolsWithAnnotation() = getSymbolsWithAnnot
  * 该注解解析[KSAnnotation]为[KSClassDeclaration]
  * 等价于 annotationType.resolve().declaration
  */
-val KSAnnotation.declaration get() = annotationType.resolve().declaration
+@OptIn(CacheValueProtection::class)
+val KSAnnotation.declaration get() =/* 对于同一个 KSAnnotation 我们总可以获得一个相同的 declaration */ cacheValue(this) { it.annotationType.resolve().declaration }
 
 /**
  * 该注解尝试解析 [KSAnnotation] 上的注解
  * 由于[KSAnnotation]的特殊性，必须要通过 annotationType.resolve().declaration.annotations
  * 才能获得标注在注解上方的元注解
  */
-val KSAnnotation.annotations get() = declaration.annotations
+
+val KSAnnotation.annotations get() = declaration.annotations /*由于 declaration 被缓存了此处不需要缓存 */
 
 /**
  * 该方法返回[KSAnnotation]的[simpleName]的[String]形式

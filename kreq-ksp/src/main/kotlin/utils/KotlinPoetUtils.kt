@@ -142,12 +142,14 @@ fun FunBuilder.importParameters(declaration: KSFunctionDeclaration) = apply {
  * 如果没有，抛出 [NotAValidApiDecl] 异常
  * @throws NotAValidApiDecl
  */
-context (SymbolProcessorContext)
-fun assertIsApiAnnotated(api: KSClassDeclaration) {
+@Suppress("NAME_SHADOWING")
+@OptIn(CacheValueProtection::class)
+fun assertIsApiAnnotated(api: KSClassDeclaration) = cacheValue(api) { api ->
     api.getAnnotationsByType(Api::class).toList().ifEmpty {
         throw NotAValidApiDecl(api)
     }
 }
+
 
 /**
  * 在使用 KotlinPoet 并且 %L 占位符时，使用该函数在字符串中拼接一个变量
@@ -194,7 +196,7 @@ fun FunSpec.Builder.buildNewCall(responseVarName: String, requestVarName: String
  * * [instanceVarName] 实体的名字
  * * [className] 类型名
  */
-context (SymbolProcessorContext)
+context(SymbolProcessorContext)
 fun FunSpec.Builder.addCreateNewInstanceStatement(instanceVarName: String, className: ClassName) =
     addStatement("val $instanceVarName = %T()", className)
 

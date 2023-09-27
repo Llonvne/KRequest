@@ -1,8 +1,8 @@
 package utils
 
 import Constants
-import Constants.okHttpRequestBuilderFqName
-import Constants.okHttpResponseFqName
+import Constants.OK_HTTP_REQUEST_BUILDER_FQ_NAME
+import Constants.OK_HTTP_RESPONSE_FQ_NAME
 import DELETE
 import GET
 import HttpMethod
@@ -22,13 +22,16 @@ val List<KSValueArgument>.uri get() = first { it.name?.asString() == "uri" }.val
 fun KSValueParameter.hasPostBodyAnnotation() =
     annotations.filter { anno -> anno.isSameType<PostBody>() }.toList().isNotEmpty()
 
+@OptIn(CacheValueProtection::class)
 val Resolver.requestBodyDecl: KSType
-    get() = this.getClassDeclarationByNameOrException("okhttp3.RequestBody").asStarProjectedType()
+    get() = cacheValue { this.getClassDeclarationByNameOrException("okhttp3.RequestBody").asStarProjectedType() }
 
-fun KSValueParameter.typeIsRequestBody(resolver: Resolver) = type.resolve().isAssignableFrom(resolver.requestBodyDecl)
+context(SymbolProcessorContext)
+fun KSValueParameter.typeIsRequestBody() = type.resolve().isAssignableFrom(resolver.requestBodyDecl)
 
+@OptIn(CacheValueProtection::class)
 fun Resolver.getClassDeclarationByNameOrException(name: String) =
-    getClassDeclarationByName(name) ?: throw KSClassDeclarationNotFound(name)
+    cacheValue(name) { getClassDeclarationByName(it) ?: throw KSClassDeclarationNotFound(it) }
 
 fun KSTypeReference?.isTypeQualifiedNameEquals(qualifiedName: String) =
     this?.resolve()?.declaration?.qualifiedName?.asString() == qualifiedName
@@ -38,20 +41,27 @@ fun KSFunctionDeclaration.isReturnTypeQualifiedNameEquals(qualifiedName: String)
 
 fun KSFunctionDeclaration.isSuspend(): Boolean = modifiers.contains(Modifier.SUSPEND)
 
-fun qualifiedNameSetOf(vararg classes: KClass<*>) = classes
-    .mapNotNull { it::class.qualifiedName }.toSet()
+fun simpleNameSetOf(vararg classes: KClass<*>) = classes
+    .mapNotNull { it.simpleName }.toSet()
 
 fun KSAnnotation.hasHttpMethodAnnotation() = annotations.filterType<HttpMethod>().toList().isNotEmpty()
 
+@OptIn(CacheValueProtection::class)
 fun extractHttpMethod(decl: KSFunctionDeclaration) =
-    decl.annotations.toList()
-        .first { it.qualifiedName in qualifiedNameSetOf(GET::class, POST::class, DELETE::class) }
+    decl.annotations.toList().first {
+        it.simpleName in cacheValue {
+            simpleNameSetOf(
+                GET::class, POST::class, DELETE::class
+            )
+        }
+    }
+
 
 context (SymbolProcessorContext)
 val okHttpRequestBuilderDecl
-    get() = resolver.getClassDeclarationByNameOrException(okHttpRequestBuilderFqName)
+    get() = resolver.getClassDeclarationByNameOrException(OK_HTTP_REQUEST_BUILDER_FQ_NAME)
 
-val KSFunctionDeclaration.returnTypeIsResponse get() = isReturnTypeQualifiedNameEquals(okHttpResponseFqName)
+val KSFunctionDeclaration.returnTypeIsResponse get() = isReturnTypeQualifiedNameEquals(OK_HTTP_RESPONSE_FQ_NAME)
 
 fun KSFunctionDeclaration.assertCustomizeReturnTypeShouldBeNullable() {
     if (!returnType?.resolve()?.isMarkedNullable!!) {
